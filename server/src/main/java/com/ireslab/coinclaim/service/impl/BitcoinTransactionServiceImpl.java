@@ -2,6 +2,8 @@ package com.ireslab.coinclaim.service.impl;
 
 import java.math.BigInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,6 +20,8 @@ import com.ireslab.coinclaim.service.BlockchainTransactionService;
 @Service
 public class BitcoinTransactionServiceImpl implements BlockchainTransactionService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(BitcoinTransactionServiceImpl.class);
+
 	@Autowired
 	private RestTemplate restTemplate;
 
@@ -33,6 +37,8 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 	 */
 	@Override
 	public AddressDto generateAddress(BigInteger index) {
+
+		LOG.debug("Calling node server to generate unique bitcoin address for index - " + index);
 
 		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getAddressGenerationEndpoint();
 		AddressDto addressDto = new AddressDto();
@@ -51,6 +57,8 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 	 */
 	@Override
 	public TransactionDto retrieveBalance(String address) {
+
+		LOG.debug("Calling node server to retrieve account balance for address - " + address);
 
 		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getBtcBalanceEndpoint();
 		TransactionDto transactionDto = new TransactionDto();
@@ -72,16 +80,9 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 	public TransactionDto transferTokens(TransactionDto transactionDto) {
 
 		final String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getBtcTransferEndpoint();
-
-		TransactionDto transaction = new TransactionDto();
-		transaction.setAmount(transactionDto.getAmount());
-		transaction.setFromAddress(transactionDto.getFromAddress());
-		transaction.setIndex(transactionDto.getIndex());
-
-		transaction = restTemplate.postForObject(url, transaction, TransactionDto.class);
+		transactionDto = restTemplate.postForObject(url, transactionDto, TransactionDto.class);
 
 		// TODO Auto-generated method stub
-		return null;
+		return transactionDto;
 	}
-
 }

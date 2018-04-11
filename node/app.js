@@ -1,6 +1,6 @@
 var properties = require('./properties');
 var hdPrivXprivkey = properties.hdPrivXprivkey;
-// var bitcoinToaddress = properties.bitcoinToaddress;
+// var bitcoinToAddress = properties.bitcoinToAddress;
 
 var bodyParser = require('body-parser');
 var express = require('express');
@@ -135,11 +135,12 @@ function getBitcoinPrivateKey(hdpriv, index) {
 /** ************************************************************ */
 app.post('/checkbtcbalance', function(req, res) {
 
-	console.log('POST REQUEST TO CHECK BALANCE');
-
 	var body = req.body;
 	var fromAddress = body.fromAddress;
 	var balance = 0;
+	
+	console.log('POST REQUEST TO CHECK BALANCE FOR ADDRESS - ' + fromAddress);
+	
 	/** ************************************************************ */
 	/* CHECKING BITCOIN UNSPEND TRANSACTION OBJECT */
 	/** ************************************************************ */
@@ -250,16 +251,20 @@ app
 				'/bitcoin_transfer',
 				function(req, res) {
 
-					var body = req.body;
-
-					var bitcoinToAddress = body.toAddress;
-
-					console.log('\nBitcoin transfer request FROM - '
-							+ body.fromAddress + ' , TO - ' + bitcoinToaddress);
-
 					res.writeHead(200, {
 						'Content-Type' : 'application/json'
 					});
+
+					var body = req.body;
+
+					var bitcoinFromAddress = body.fromAddress;
+					var bitcoinToAddress = body.toAddress;
+					var index = body.index;
+					var balance = body.amount;
+
+					console.log('\nBitcoin transfer request FROM - '
+							+ bitcoinFromAddress);
+					console.log('To - ' + bitcoinToAddress);
 
 					const unit = bitcore.Unit;
 					const minerFee = unit.fromMilis(0.128).toSatoshis();
@@ -267,12 +272,9 @@ app
 					const bitcore_transaction = ""; //
 
 					console.log('Miner Fee - ' + minerFee);
-					var bitcoinFromaddress = body.fromAddress;
-					var index = body.index;
-					var balance = body.amount;
 
 					var result = {
-						fromAddress : bitcoinFromaddress,
+						fromAddress : bitcoinFromAddress,
 						index : index,
 						amount : balance,
 						transactionReciept : null,
@@ -283,15 +285,15 @@ app
 
 					insight
 							.getUnspentUtxos(
-									bitcoinFromaddress,
+									bitcoinFromAddress,
 									function(error, utxos) {
 
 										try {
 
 											var fromAddress = new Address(
-													bitcoinFromaddress);
+													bitcoinFromAddress);
 											var toAddress = new Address(
-													bitcoinToaddress);
+													bitcoinToAddress);
 											if (error) {
 												// any other error
 												result.code = 100;
@@ -396,11 +398,11 @@ app
 													let bitcore_transaction = new bitcore.Transaction()
 															.from(utxos)
 															.to(
-																	bitcoinToaddress,
+																	bitcoinToAddress,
 																	transactionAmount)
 															.fee(minerFee)
 															.change(
-																	bitcoinFromaddress)
+																	bitcoinFromAddress)
 															.sign(
 																	bitcoinPrivatekey);
 

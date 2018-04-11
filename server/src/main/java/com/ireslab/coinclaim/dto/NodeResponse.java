@@ -54,4 +54,15 @@ public class NodeResponse {
 	public void setResultCode(String resultCode) {
 		this.resultCode = resultCode;
 	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "NodeResponse [errorCode=" + errorCode + ", description=" + description + ", resultCode=" + resultCode
+				+ "]";
+	}
 }

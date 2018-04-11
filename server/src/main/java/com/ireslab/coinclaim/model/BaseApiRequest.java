@@ -19,23 +19,23 @@ public class BaseApiRequest implements Serializable {
 	 */
 	private static final long serialVersionUID = 4181869035260633029L;
 
-	private String companyCorrelationId;
+	private String clientCorrelationId;
 
 	private String type;
 
 	/**
 	 * @return the companyCorrelationId
 	 */
-	public String getCompanyCorrelationId() {
-		return companyCorrelationId;
+	public String getClientCorrelationId() {
+		return clientCorrelationId;
 	}
 
 	/**
-	 * @param companyCorrelationId
+	 * @param clientCorrelationId
 	 *            the companyCorrelationId to set
 	 */
-	public void setCompanyCorrelationId(String companyCorrelationId) {
-		this.companyCorrelationId = companyCorrelationId;
+	public void setClientCorrelationId(String clientCorrelationId) {
+		this.clientCorrelationId = clientCorrelationId;
 	}
 
 	/**
@@ -55,7 +55,7 @@ public class BaseApiRequest implements Serializable {
 
 	@Override
 	public String toString() {
-		return "BaseApiRequest [companyCorrelationId=" + companyCorrelationId + ", type=" + type + "]";
+		return "BaseApiRequest [clientCorrelationId=" + clientCorrelationId + ", type=" + type + "]";
 	}
 
 }

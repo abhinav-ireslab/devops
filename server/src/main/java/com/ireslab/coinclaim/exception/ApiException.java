@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 
+import com.ireslab.coinclaim.model.Error;
+
 /**
  * Custom application exception
  * 
@@ -21,6 +23,95 @@ public class ApiException extends RuntimeException {
 	private String message;
 
 	private List<Error> errors;
+
+	/**
+	 * @param httpStatus
+	 * @param errors
+	 */
+	public ApiException(HttpStatus httpStatus, List<Error> errors) {
+		super();
+		this.httpStatus = httpStatus;
+		this.errors = errors;
+	}
+
+	public ApiException() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public ApiException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
+		// TODO Auto-generated constructor stub
+	}
+
+	public ApiException(String message, Throwable cause) {
+		super(message, cause);
+		// TODO Auto-generated constructor stub
+	}
+
+	public ApiException(String message) {
+		super(message);
+		// TODO Auto-generated constructor stub
+	}
+
+	public ApiException(Throwable cause) {
+		super(cause);
+		// TODO Auto-generated constructor stub
+	}
+
+	/**
+	 * @param httpStatus
+	 * @param code
+	 * @param errors
+	 */
+	public ApiException(HttpStatus httpStatus, Integer code, List<Error> errors) {
+		super();
+		this.httpStatus = httpStatus;
+		this.code = code;
+		this.errors = errors;
+	}
+
+	/**
+	 * @param httpStatus
+	 * @param code
+	 * @param message
+	 * @param errors
+	 */
+	public ApiException(HttpStatus httpStatus, Integer code, String message, List<Error> errors) {
+		super();
+		this.httpStatus = httpStatus;
+		this.code = code;
+		this.message = message;
+		this.errors = errors;
+	}
+
+	/**
+	 * @param code
+	 * @param message
+	 * @param errors
+	 */
+	public ApiException(Integer code, String message, List<Error> errors) {
+		super();
+		this.code = code;
+		this.message = message;
+		this.errors = errors;
+	}
+
+	/**
+	 * @param refId
+	 * @param httpStatus
+	 * @param code
+	 * @param message
+	 * @param errors
+	 */
+	public ApiException(String refId, HttpStatus httpStatus, Integer code, String message, List<Error> errors) {
+		super();
+		this.refId = refId;
+		this.httpStatus = httpStatus;
+		this.code = code;
+		this.message = message;
+		this.errors = errors;
+	}
 
 	/**
 	 * @return the refId

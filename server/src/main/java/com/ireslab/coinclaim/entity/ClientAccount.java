@@ -17,16 +17,16 @@ import javax.persistence.TemporalType;
  *
  */
 @Entity
-@Table(name = "company_account")
-public class CompanyAccount {
+@Table(name = "client_account")
+public class ClientAccount {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "account_id")
 	private Integer accountId;
 
-	@Column(name = "company_correlation_id")
-	private String companyCorrelationId;
+	@Column(name = "client_correlation_id")
+	private String clientCorrelationId;
 
 	@Column(name = "child_index")
 	private BigInteger childIndex;
@@ -54,18 +54,18 @@ public class CompanyAccount {
 	}
 
 	/**
-	 * @return the companyCorrelationId
+	 * @return the clientCorrelationId
 	 */
-	public String getCompanyCorrelationId() {
-		return companyCorrelationId;
+	public String getClientCorrelationId() {
+		return clientCorrelationId;
 	}
 
 	/**
-	 * @param companyCorrelationId
+	 * @param clientCorrelationId
 	 *            the companyCorrelationId to set
 	 */
-	public void setCompanyCorrelationId(String companyCorrelationId) {
-		this.companyCorrelationId = companyCorrelationId;
+	public void setClientCorrelationId(String clientCorrelationId) {
+		this.clientCorrelationId = clientCorrelationId;
 	}
 
 	/**
@@ -120,7 +120,7 @@ public class CompanyAccount {
 	 */
 	@Override
 	public String toString() {
-		return "CompanyAccount [accountId=" + accountId + ", companyCorrelationId=" + companyCorrelationId
+		return "CompanyAccount [accountId=" + accountId + ", companyCorrelationId=" + clientCorrelationId
 				+ ", childIndex=" + childIndex + ", btcAddress=" + btcAddress + ", modifiedDate=" + modifiedDate + "]";
 	}
 }

@@ -89,4 +89,15 @@ public class TransactionDto extends NodeResponse {
 		this.transactionReciept = transactionReciept;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "TransactionDto [fromAddress=" + fromAddress + ", index=" + index + ", toAddress=" + toAddress
+				+ ", amount=" + amount + ", transactionReciept=" + transactionReciept + ", toString()="
+				+ super.toString() + "]";
+	}
 }

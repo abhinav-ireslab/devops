@@ -1,6 +1,6 @@
 // CC Blockchain API Configurations
 module.exports = {
-	bitcoinToaddress : "mxSkG37DEHMEJrYn5vfU8ALd6t3uQMZ96m",
+//	bitcoinToaddress : "mxSkG37DEHMEJrYn5vfU8ALd6t3uQMZ96m",
 	insightBitcoinUrl : 'https://test-insight.bitpay.com',
 	// network:"mainnet",
 	network:"testnet",
