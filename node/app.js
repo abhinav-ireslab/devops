@@ -1,6 +1,5 @@
 var properties = require('./properties');
 var hdPrivXprivkey = properties.hdPrivXprivkey;
-// var bitcoinToAddress = properties.bitcoinToAddress;
 
 var bodyParser = require('body-parser');
 var express = require('express');
@@ -8,23 +7,12 @@ var app = express();
 var bitcore = require('bitcore-lib');
 var explorers = require('bitcore-explorers');
 var Mnemonic = require('bitcore-mnemonic');
-/*
- * var EthereumBip44 = require('ethereum-bip44'); var ethereumjsUtil =
- * require('ethereumjs-util')
- */
 
 var Address = bitcore.Address;
 var PrivateKey = bitcore.PrivateKey;
 const unit = bitcore.Unit;
 
-/* var Web3 = require('web3'); */
-/* const RPC_URL = properties.gethUrl; */
-/*
- * var provider = new Web3.providers.HttpProvider(RPC_URL); var web3 = new
- * Web3(provider);
- */
 var BigNumber = require('bignumber.js');
-/* const EthereumTx = require('ethereumjs-tx') */
 
 const insight = new explorers.Insight(properties.insightBitcoinUrl,
 		properties.network);
@@ -81,14 +69,6 @@ app
 
 					// hdprivIndex.privateKey.toAddress().toString();
 					console.log("bitcoin address : " + bitcoinAddress);
-					/** ************************************************************ */
-					/* ETHEREUM ADDRESS */
-					/** ************************************************************ */
-					/*
-					 * var etherAddress = getEthereumAddress(hdpriv, index);
-					 * 
-					 * console.log("ether address : " + etherAddress );
-					 */
 
 					/** ************************************************************ */
 					/* GENERATING RESPONSE */
@@ -119,17 +99,6 @@ function getBitcoinPrivateKey(hdpriv, index) {
 	return bitcoinPrivateKey;
 }
 
-/*
- * function getEthereumAddress( xpriv, index){ var wallet = new
- * EthereumBip44(xpriv); var addressVar = wallet.getAddress(index); var
- * publickey = ethereumjsUtil.toChecksumAddress (addressVar); return publickey; }
- */
-
-/*
- * function getEthereumAddressPrivateKey( xpriv, index){ var wallet = new
- * EthereumBip44(xpriv); var privateKey = wallet.getPrivateKey(index); var
- * publickeyHex = privateKey.toString('hex'); return publickeyHex; }
- */
 /** ************************************************************ */
 /* CHECKING BITCOIN BALANCE BY ADDRESS */
 /** ************************************************************ */
@@ -138,9 +107,9 @@ app.post('/checkbtcbalance', function(req, res) {
 	var body = req.body;
 	var fromAddress = body.fromAddress;
 	var balance = 0;
-	
+
 	console.log('POST REQUEST TO CHECK BALANCE FOR ADDRESS - ' + fromAddress);
-	
+
 	/** ************************************************************ */
 	/* CHECKING BITCOIN UNSPEND TRANSACTION OBJECT */
 	/** ************************************************************ */
@@ -165,82 +134,6 @@ app.post('/checkbtcbalance', function(req, res) {
 	});
 
 });
-
-/*
- * app.post('/ether_transfer', function(req, res){ console.log('POST /');
- * console.log(); res.writeHead(200, {'Content-Type': 'application/json'});
- * 
- * var body = req.body; var to = properties.etherTo;
- *//** ************************************************************ */
-/*
- * Read request data
- *//** ************************************************************ */
-/*
- * 
- * var from = body.fromAddress; var index = body.index; var value = body.amount;
- * 
- * console.log('Ether Transfer request FROM - ' + from + ' , TO - ' + to);
- * 
- *//** ************************************************************ */
-/*
- * Read transaction count and create transaction object
- *//** ************************************************************ */
-/*
- * 
- * web3.eth.getTransactionCount(from).then(function (nonce) {
- * 
- * var estimate = web3.eth.estimateGas({from: from, to: to,
- * amount:value}).then(function (limit) {
- * 
- * limit = limit * 1;
- * 
- * limit = parseInt(limit); var gasprice = new BigNumber(21000000000);
- * 
- * var balance = value - (gasprice.times(limit)); var valueToHex =
- * web3.utils.toHex(balance); var gasLimitToHex = web3.utils.toHex(limit ); var
- * gasPriceToHex = web3.utils.toHex(gasprice);
- * 
- * var txnObj = { to : to, value : valueToHex , gasLimit :gasLimitToHex ,
- * gasPrice : gasPriceToHex , nonce : nonce };
- * 
- * console.log("Transaction Object - " + txnObj);
- * 
- * var xpriv = getRootKey(); const privateKeyHex = getEthereumAddressPrivateKey(
- * xpriv, index); const privateKeyBuffer = Buffer.from(privateKeyHex, 'hex')
- * 
- * var transactionHashString; const tx = new EthereumTx(txnObj);
- * tx.sign(privateKeyBuffer); const serializedTx = tx.serialize();
- * 
- * 
- * web3.eth.sendSignedTransaction ('0x' + serializedTx.toString('hex') ,
- * function(err, transactionHash) { if (!err){ console.log(transactionHash); //
- * "0x7f9fade1c0d57a7af66ab4ead7c2eb7b11a91385" transactionHashString =
- * transactionHash; code=200; description ="Success"; errorCode=null; } else{
- * console.log(err); transactionHashString =""; code=100, description ="Error in
- * sending transaction", errorCode=110 } var result = { fromAddress:from,
- * index:index, amount : value, transactionReciept : transactionHashString,
- * resultCode: code, description: description, errorCode: errorCode }
- * 
- * console.log('result - ' + JSON.stringify(result));
- * 
- * res.end(JSON.stringify(result)); });
- * 
- * 
- * }); });
- * 
- * 
- *//** ************************************************************ */
-/*
- * send transaction data
- *//** ************************************************************* */
-/*
- * 
- * 
- * 
- * 
- * 
- * });
- */
 
 /** ************************************************************ */
 /* send bitcoin transaction data */
@@ -491,31 +384,7 @@ app
 											result.errorCode = 100;
 											result.errorDesc = e.stack;
 											result.code = 100;
-											res.end(JSON.stringify(errorBody));
+											res.end(JSON.stringify(result));
 										}
 									});
 				});
-
-/*
- * app.post('/getTransactionStatus', function(req, res) {
- * 
- * var hash = req.body.transactionHash; // var hash = //
- * '0xd3497c870f73bbf447e07b6b8bd79cf69d41d0bec55639d21ccfa0705bd3f1e4';// ;
- * console.log("request recieved for hash :" + hash);
- * 
- * var receipt = web3.eth.getTransactionReceipt(hash).then((result) => {
- * console.log(result); var status = result.status; var resultStatus =0;
- * if(status != null && status != undefined){ status =
- * web3.utils.hexToNumber(status); resultStatus = status; } var successRes = {
- * 
- * status : resultStatus, hash : hash };
- * 
- * 
- * res.end(JSON.stringify(successRes));
- * 
- * });
- */
-
-/*
- * });
- */
