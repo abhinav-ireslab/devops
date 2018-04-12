@@ -1,1 +1,9 @@
 **/node_modules
+server/.classpath
+node/.project
+server/cc_server.log
+server/.springBeans
+server/.project
+server/.factorypath
+**/.settings
+**/target
