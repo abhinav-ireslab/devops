@@ -3,6 +3,6 @@ module.exports = {
 	insightBitcoinUrl : 'https://test-insight.bitpay.com',
 	// network:"mainnet",
 	network:"testnet",
-	memonic : "strike dirt latin outer waste egg broom such diamond involve flee shove",
+	memonic : "reward series ball learn add black fee good loan cheap dawn runway",
 	password : "coincl@im"
 }
