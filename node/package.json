@@ -1,7 +1,7 @@
 {
-  "name": "bitcoinlend",
+  "name": "coinclaim",
   "version": "0.1.0",
-  "description": "bitcoinlend node",
+  "description": "coinclaim node",
   "main": "app.js",
   "author": "iRESlab",
   "dependencies": {

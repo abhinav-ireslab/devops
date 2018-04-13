@@ -7,3 +7,4 @@ server/.project
 server/.factorypath
 **/.settings
 **/target
+node/npm-debug.log
