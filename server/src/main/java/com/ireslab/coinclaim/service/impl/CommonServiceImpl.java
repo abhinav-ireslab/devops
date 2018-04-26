@@ -38,7 +38,7 @@ public class CommonServiceImpl implements CommonService {
 		lock.lock();
 		LOG.info("Reading index after lock");
 
-		UniqueIndex lastIndex = uniqueAddressRepo.findById(1L).get();
+		UniqueIndex lastIndex = uniqueAddressRepo.findOne(1L);
 		LOG.debug("Last Index - " + lastIndex);
 
 		if (lastIndex == null) {
