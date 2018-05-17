@@ -58,7 +58,7 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 	@Override
 	public TransactionDto retrieveBalance(String address) {
 
-		LOG.debug("Calling node server to retrieve account balance for address - " + address);
+		LOG.debug("Calling node server to retrieve bitcoin account balance for address - " + address);
 
 		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getBtcBalanceEndpoint();
 		TransactionDto transactionDto = new TransactionDto();

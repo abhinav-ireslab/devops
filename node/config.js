@@ -6,10 +6,10 @@ const bitCoreLibCashUnspentOutputSourceFilePath = './unspentoutput.js';
 const bitCorelibCashUnspentOutputDestFilePath = './node_modules/bitcore-lib-cash/lib/transaction/unspentoutput.js';
 
 updateExplorers=function(){
-    fs.move('./node_modules/bitcore-explorers/node_modules/bitcore-lib', './node_modules/bitcore-explorers/node_modules/bitcore-lib_1', err => {
+  /*  fs.move('./node_modules/bitcore-explorers/node_modules/bitcore-lib', './node_modules/bitcore-explorers/node_modules/bitcore-lib_1', err => {
 		if (err) return console.error(err)
 		console.log('bitcore-explorers/node_modules/bitcore-lib successfully moved to bitcore-lib_1 !')
-	})
+	})*/
     //setTimeout(copyBitcoreExplore, 3000);
   //  setTimeout(updateInsightFile, 6000);
 	setTimeout(copyBitcoreLibUnspentOutputFile, 7000);

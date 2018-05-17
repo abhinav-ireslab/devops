@@ -1,5 +1,6 @@
 package com.ireslab.coinclaim.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -19,9 +20,7 @@ public class GenerateAddressResponse extends BaseApiResponse {
 	 */
 	private static final long serialVersionUID = -8860997560925100629L;
 
-	private String type;
-
-	private String address;
+	private List<AccountDetails> accountDetails;
 
 	/**
 	 * @param status
@@ -67,45 +66,44 @@ public class GenerateAddressResponse extends BaseApiResponse {
 	}
 
 	/**
-	 * @param type
-	 * @param address
+	 * @param accountDetails
 	 * @param status
 	 * @param code
 	 * @param errors
 	 */
-	public GenerateAddressResponse(String type, String address, Integer status, Integer code, List<Error> errors) {
+	public GenerateAddressResponse(List<AccountDetails> accountDetails, Integer status, Integer code,
+			List<Error> errors) {
 		super(status, code, errors);
-		this.type = type;
-		this.address = address;
+		this.accountDetails = accountDetails;
 	}
 
 	/**
-	 * @return the type
+	 * @param accountDetails
+	 * @param status
+	 * @param code
+	 * @param errors
 	 */
-	public String getType() {
-		return type;
+	public GenerateAddressResponse(AccountDetails accountDetails, Integer status, Integer code, List<Error> errors) {
+		super(status, code, errors);
+
+		if (this.accountDetails == null) {
+			this.accountDetails = new ArrayList<>();
+		}
+		this.accountDetails.add(accountDetails);
 	}
 
 	/**
-	 * @param type
-	 *            the type to set
+	 * @return the accountDetails
 	 */
-	public void setType(String type) {
-		this.type = type;
+	public List<AccountDetails> getAccountDetails() {
+		return accountDetails;
 	}
 
 	/**
-	 * @return the address
+	 * @param accountDetails
+	 *            the accountDetails to set
 	 */
-	public String getAddress() {
-		return address;
-	}
-
-	/**
-	 * @param address
-	 *            the address to set
-	 */
-	public void setAddress(String address) {
-		this.address = address;
+	public void setAccountDetails(List<AccountDetails> accountDetails) {
+		this.accountDetails = accountDetails;
 	}
 }

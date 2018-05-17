@@ -4,5 +4,7 @@ module.exports = {
 	// network:"mainnet",
 	network:"testnet",
 	memonic : "reward series ball learn add black fee good loan cheap dawn runway",
-	password : "coincl@im"
+	password : "coincl@im",
+	//
+	gethUrl : "http://180.151.74.42:8545/"
 }

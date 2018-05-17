@@ -1,43 +1,31 @@
 package com.ireslab.coinclaim.model;
 
-import java.io.Serializable;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-/**
- * @author iRESlab
- *
- */
 @JsonInclude(value = Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BaseApiRequest implements Serializable {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4181869035260633029L;
-
-	private String clientCorrelationId;
+public class AccountDetails {
 
 	private String type;
+
+	private String address;
+
+	private String balance;
 
 	private String tokenCode;
 
 	/**
-	 * @return the companyCorrelationId
+	 * @param type
+	 * @param address
+	 * @param balance
 	 */
-	public String getClientCorrelationId() {
-		return clientCorrelationId;
-	}
-
-	/**
-	 * @param clientCorrelationId
-	 *            the companyCorrelationId to set
-	 */
-	public void setClientCorrelationId(String clientCorrelationId) {
-		this.clientCorrelationId = clientCorrelationId;
+	public AccountDetails(String type, String address, String balance) {
+		super();
+		this.type = type;
+		this.address = address;
+		this.balance = balance;
 	}
 
 	/**
@@ -56,6 +44,36 @@ public class BaseApiRequest implements Serializable {
 	}
 
 	/**
+	 * @return the address
+	 */
+	public String getAddress() {
+		return address;
+	}
+
+	/**
+	 * @param address
+	 *            the address to set
+	 */
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	/**
+	 * @return the balance
+	 */
+	public String getBalance() {
+		return balance;
+	}
+
+	/**
+	 * @param balance
+	 *            the balance to set
+	 */
+	public void setBalance(String balance) {
+		this.balance = balance;
+	}
+
+	/**
 	 * @return the tokenCode
 	 */
 	public String getTokenCode() {
@@ -69,10 +87,4 @@ public class BaseApiRequest implements Serializable {
 	public void setTokenCode(String tokenCode) {
 		this.tokenCode = tokenCode;
 	}
-
-	@Override
-	public String toString() {
-		return "BaseApiRequest [clientCorrelationId=" + clientCorrelationId + ", type=" + type + "]";
-	}
-
 }

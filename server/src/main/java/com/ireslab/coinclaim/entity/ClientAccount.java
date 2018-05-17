@@ -34,6 +34,9 @@ public class ClientAccount {
 	@Column(name = "btc_address")
 	private String btcAddress;
 
+	@Column(name = "eth_address")
+	private String ethAddress;
+
 	@Column(name = "date_modified", nullable = false)
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date modifiedDate;
@@ -96,6 +99,21 @@ public class ClientAccount {
 	 */
 	public void setBtcAddress(String btcAddress) {
 		this.btcAddress = btcAddress;
+	}
+
+	/**
+	 * @return the ethAddress
+	 */
+	public String getEthAddress() {
+		return ethAddress;
+	}
+
+	/**
+	 * @param ethAddress
+	 *            the ethAddress to set
+	 */
+	public void setEthAddress(String ethAddress) {
+		this.ethAddress = ethAddress;
 	}
 
 	/**

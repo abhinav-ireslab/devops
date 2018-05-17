@@ -1,5 +1,6 @@
 package com.ireslab.coinclaim.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -19,7 +20,7 @@ public class AccountBalanceResponse extends BaseApiResponse {
 	 */
 	private static final long serialVersionUID = -8860997560925100629L;
 
-	private String accountBalance;
+	private List<AccountDetails> accountDetails;
 
 	/**
 	 * @param status
@@ -65,29 +66,45 @@ public class AccountBalanceResponse extends BaseApiResponse {
 	}
 
 	/**
-	 * @param type
-	 * @param address
+	 * @param accountDetails
 	 * @param status
 	 * @param code
 	 * @param errors
 	 */
-	public AccountBalanceResponse(String accountBalance, Integer status, Integer code, List<Error> errors) {
+	public AccountBalanceResponse(List<AccountDetails> accountDetails, Integer status, Integer code,
+			List<Error> errors) {
 		super(status, code, errors);
-		this.accountBalance = accountBalance;
+		this.accountDetails = accountDetails;
 	}
 
 	/**
-	 * @return the accountBalance
+	 * @param accountDetails
+	 * @param status
+	 * @param code
+	 * @param errors
 	 */
-	public String getAccountBalance() {
-		return accountBalance;
+	public AccountBalanceResponse(AccountDetails accountDetails, Integer status, Integer code, List<Error> errors) {
+		super(status, code, errors);
+
+		if (this.accountDetails == null) {
+			this.accountDetails = new ArrayList<>();
+		}
+
+		this.accountDetails.add(accountDetails);
 	}
 
 	/**
-	 * @param accountBalance
-	 *            the accountBalance to set
+	 * @return the accountDetails
 	 */
-	public void setAccountBalance(String accountBalance) {
-		this.accountBalance = accountBalance;
+	public List<AccountDetails> getAccountDetails() {
+		return accountDetails;
+	}
+
+	/**
+	 * @param accountDetails
+	 *            the accountDetails to set
+	 */
+	public void setAccountDetails(List<AccountDetails> accountDetails) {
+		this.accountDetails = accountDetails;
 	}
 }

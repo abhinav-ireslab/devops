@@ -19,7 +19,7 @@ public class TransferTokensResponse extends BaseApiResponse {
 	 */
 	private static final long serialVersionUID = -3014657783343431256L;
 
-	private String accountBalance;
+	private List<AccountDetails> accountDetails;
 
 	/**
 	 * @param status
@@ -53,17 +53,17 @@ public class TransferTokensResponse extends BaseApiResponse {
 	}
 
 	/**
-	 * @return the accountBalance
+	 * @return the accountDetails
 	 */
-	public String getAccountBalance() {
-		return accountBalance;
+	public List<AccountDetails> getAccountDetails() {
+		return accountDetails;
 	}
 
 	/**
-	 * @param accountBalance
-	 *            the accountBalance to set
+	 * @param accountDetails
+	 *            the accountDetails to set
 	 */
-	public void setAccountBalance(String accountBalance) {
-		this.accountBalance = accountBalance;
+	public void setAccountDetails(List<AccountDetails> accountDetails) {
+		this.accountDetails = accountDetails;
 	}
 }

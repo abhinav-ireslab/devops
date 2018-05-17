@@ -2,12 +2,15 @@ package com.ireslab.coinclaim.service.impl;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,7 @@ import com.ireslab.coinclaim.entity.ClientAccount;
 import com.ireslab.coinclaim.exception.ApiException;
 import com.ireslab.coinclaim.model.AccountBalanceRequest;
 import com.ireslab.coinclaim.model.AccountBalanceResponse;
+import com.ireslab.coinclaim.model.AccountDetails;
 import com.ireslab.coinclaim.model.BaseApiRequest;
 import com.ireslab.coinclaim.model.Error;
 import com.ireslab.coinclaim.model.GenerateAddressRequest;
@@ -28,6 +32,7 @@ import com.ireslab.coinclaim.service.BlockchainTransactionService;
 import com.ireslab.coinclaim.service.CcApiService;
 import com.ireslab.coinclaim.service.CommonService;
 import com.ireslab.coinclaim.utils.AppConstants;
+import com.ireslab.coinclaim.utils.RequestType;
 import com.ireslab.coinclaim.utils.ResponseCode;
 
 /**
@@ -46,7 +51,12 @@ public class CcApiServiceImpl implements CcApiService {
 	private ClientAccountRepo clientAccountRepo;
 
 	@Autowired
-	private BlockchainTransactionService blockchainTxnService;
+	@Qualifier("ethereumTransactionServiceImpl")
+	private BlockchainTransactionService ethereumTxnService;
+
+	@Autowired
+	@Qualifier("bitcoinTransactionServiceImpl")
+	private BlockchainTransactionService bitcoinTxnService;
 
 	/*
 	 * (non-Javadoc)
@@ -82,8 +92,10 @@ public class CcApiServiceImpl implements CcApiService {
 		AddressDto addressDto = null;
 
 		try {
-			addressDto = blockchainTxnService.generateAddress(childIndex);
-			LOG.debug("Unique Bitcoin (BTC) Address generated - " + addressDto.getUniqueBitcoinAddress());
+			addressDto = bitcoinTxnService.generateAddress(childIndex);
+			LOG.debug("Unique generated addresses:\n" + "\t Bitcoin (BTC) Address generated - "
+					+ addressDto.getUniqueBitcoinAddress() + "\n\t Unique Ethereum (ETH) Address generated - "
+					+ addressDto.getUniqueEthereumAddress());
 
 		} catch (Exception exp) {
 			LOG.error("Error occurred while generating address");
@@ -92,6 +104,7 @@ public class CcApiServiceImpl implements CcApiService {
 
 		clientAccount = new ClientAccount();
 		clientAccount.setBtcAddress(addressDto.getUniqueBitcoinAddress());
+		clientAccount.setEthAddress(addressDto.getUniqueEthereumAddress());
 		clientAccount.setChildIndex(childIndex);
 		clientAccount.setClientCorrelationId(generateAddressRequest.getClientCorrelationId());
 
@@ -101,15 +114,14 @@ public class CcApiServiceImpl implements CcApiService {
 
 		} catch (Exception exp) {
 			LOG.error("Error occurred while persisting company account details in database");
-
 			throw new ApiException("Error while persisting company account details", exp);
 		}
 
 		LOG.debug("Account details persisted in database . . .");
-		generateAddressResponse = new GenerateAddressResponse(HttpStatus.OK.value(), ResponseCode.SUCCESS.getCode(),
-				"Success");
-		generateAddressResponse.setAddress(addressDto.getUniqueBitcoinAddress());
-		generateAddressResponse.setType(generateAddressRequest.getType());
+		generateAddressResponse = new GenerateAddressResponse(
+				Arrays.asList(new AccountDetails(RequestType.BTC.name(), addressDto.getUniqueBitcoinAddress(), null),
+						new AccountDetails(RequestType.ETH.name(), addressDto.getUniqueEthereumAddress(), null)),
+				HttpStatus.OK.value(), ResponseCode.SUCCESS.getCode(), null);
 
 		return generateAddressResponse;
 	}
@@ -140,19 +152,37 @@ public class CcApiServiceImpl implements CcApiService {
 		}
 
 		TransactionDto transactionDto = null;
+		List<AccountDetails> accountDetailsList = new ArrayList<>();
+
 		try {
 			LOG.debug("Getting account balance for BTC Address - " + clientAccount.getBtcAddress());
-			transactionDto = blockchainTxnService.retrieveBalance(clientAccount.getBtcAddress());
+			transactionDto = bitcoinTxnService.retrieveBalance(clientAccount.getBtcAddress());
+
+			BigDecimal balance = new BigDecimal(transactionDto.getAmount()).divide(AppConstants.BTC_DECIMAL_DIV);
+			LOG.debug("Account Balance for address - '" + transactionDto.getFromAddress() + "' is - " + balance);
+			accountDetailsList
+					.add(new AccountDetails(RequestType.BTC.name(), clientAccount.getBtcAddress(), balance.toString()));
 
 		} catch (Exception exp) {
 			LOG.error("Error occurred while retrieving balance");
 			throw new ApiException("Error occurred while retrieving balance", exp);
 		}
 
-		BigDecimal balance = new BigDecimal(transactionDto.getAmount()).divide(AppConstants.BTC_DECIMAL_DIV);
-		LOG.debug("Account Balance for address - '" + transactionDto.getFromAddress() + "' is - " + balance);
+		try {
+			LOG.debug("Getting account balance for ETH Address - " + clientAccount.getEthAddress());
+			transactionDto = ethereumTxnService.retrieveBalance(clientAccount.getEthAddress());
 
-		accountBalanceResponse = new AccountBalanceResponse(balance.toString(), HttpStatus.OK.value(),
+			BigDecimal balance = new BigDecimal(transactionDto.getAmount()).divide(AppConstants.ETH_DECIMAL_DIV);
+			LOG.debug("Account Balance for address - '" + transactionDto.getFromAddress() + "' is - " + balance);
+			accountDetailsList
+					.add(new AccountDetails(RequestType.ETH.name(), clientAccount.getEthAddress(), balance.toString()));
+
+		} catch (Exception exp) {
+			LOG.error("Error occurred while retrieving balance");
+			throw new ApiException("Error occurred while retrieving balance", exp);
+		}
+
+		accountBalanceResponse = new AccountBalanceResponse(accountDetailsList, HttpStatus.OK.value(),
 				ResponseCode.SUCCESS.getCode(), null);
 
 		return accountBalanceResponse;
@@ -194,40 +224,76 @@ public class CcApiServiceImpl implements CcApiService {
 							"Client doesn't exists for Correlation Id : " + clientCorrelationId)));
 		}
 
-		String clientBtcAddress = clientAccount.getBtcAddress();
-
 		TransactionDto transactionDto = new TransactionDto();
-		transactionDto.setFromAddress(clientBtcAddress);
 		transactionDto.setIndex(clientAccount.getChildIndex().intValue());
 		transactionDto.setToAddress(transferTokensRequest.getBeneficiaryAddress());
 
-		BigInteger amountInSatoshi = new BigDecimal(noOfTokens).multiply(AppConstants.BTC_DECIMAL_DIV).toBigInteger();
-		transactionDto.setAmount(amountInSatoshi);
+		// Bitcoin (BTC) transfer request
+		if (transferTokensRequest.getType().equalsIgnoreCase(RequestType.BTC.name())) {
 
-		try {
-			LOG.debug("Initiating transfer of '" + amountInSatoshi + "' satoshis From : '" + clientBtcAddress
-					+ "' , To : " + transferTokensRequest.getBeneficiaryAddress());
-			transactionDto = blockchainTxnService.transferTokens(transactionDto);
-			LOG.debug("Tokens transferred successfully - " + transactionDto.getTransactionReciept());
+			String clientBtcAddress = clientAccount.getBtcAddress();
+			transactionDto.setFromAddress(clientBtcAddress);
 
-		} catch (Exception exp) {
-			LOG.error("Error occurred while transferring tokens");
-			throw new ApiException("Error occurred while transferring tokens", exp);
+			BigInteger amountInSatoshi = new BigDecimal(noOfTokens).multiply(AppConstants.BTC_DECIMAL_DIV)
+					.toBigInteger();
+			transactionDto.setAmount(amountInSatoshi);
+
+			try {
+				LOG.debug("Initiating transfer of '" + amountInSatoshi + "' satoshis From : '" + clientBtcAddress
+						+ "' , To : " + transferTokensRequest.getBeneficiaryAddress());
+				transactionDto = bitcoinTxnService.transferTokens(transactionDto);
+				LOG.debug("Bitcoins transferred successfully - " + transactionDto.getTransactionReciept());
+
+			} catch (Exception exp) {
+				LOG.error("Error occurred while transferring bitcoins");
+				throw new ApiException("Error occurred while transferring bitcoins", exp);
+			}
+
+			try {
+				String balance = String
+						.valueOf(new BigDecimal(bitcoinTxnService.retrieveBalance(clientBtcAddress).getAmount())
+								.divide(AppConstants.BTC_DECIMAL_DIV).doubleValue());
+				LOG.debug("Updated Bitcoin balance for client is  - " + balance);
+				// transferTokensResponse.setAccountDetails(new AccountDetails.);
+
+			} catch (Exception exp) {
+				LOG.error("Error occurred while getting updated balance" + ExceptionUtils.getStackTrace(exp));
+			}
+
+			// Ethereum (BTC) transfer request
+		} else if (transferTokensRequest.getType().equalsIgnoreCase(RequestType.ETH.name())) {
+
+			String clientEthAddress = clientAccount.getEthAddress();
+			transactionDto.setFromAddress(clientEthAddress);
+
+			BigInteger amountInWei = new BigDecimal(noOfTokens).multiply(AppConstants.ETH_DECIMAL_DIV).toBigInteger();
+			transactionDto.setAmount(amountInWei);
+
+			try {
+				LOG.debug("Initiating transfer of '" + amountInWei + "' wei From : '" + clientEthAddress + "' , To : "
+						+ transferTokensRequest.getBeneficiaryAddress());
+				transactionDto = ethereumTxnService.transferTokens(transactionDto);
+				LOG.debug("Ethers transferred successfully - " + transactionDto.getTransactionReciept());
+
+			} catch (Exception exp) {
+				LOG.error("Error occurred while transferring ethers");
+				throw new ApiException("Error occurred while transferring ethers", exp);
+			}
+
+			try {
+				String balance = String
+						.valueOf(new BigDecimal(ethereumTxnService.retrieveBalance(clientEthAddress).getAmount())
+								.divide(AppConstants.ETH_DECIMAL_DIV).doubleValue());
+				LOG.debug("Updated Ethereum balance for client is  - " + balance);
+				// transferTokensResponse.setAccountDetails(new AccountDetails.);
+
+			} catch (Exception exp) {
+				LOG.error("Error occurred while getting updated balance" + ExceptionUtils.getStackTrace(exp));
+			}
 		}
 
 		transferTokensResponse = new TransferTokensResponse(HttpStatus.OK.value(), ResponseCode.SUCCESS.getCode(),
 				"Success");
-
-		try {
-			String balance = String
-					.valueOf(new BigDecimal(blockchainTxnService.retrieveBalance(clientBtcAddress).getAmount())
-							.divide(AppConstants.BTC_DECIMAL_DIV).doubleValue());
-			LOG.debug("Updated balance for client is  - " + balance);
-			transferTokensResponse.setAccountBalance(balance);
-
-		} catch (Exception exp) {
-			LOG.error("Error occurred while getting updated balance" + ExceptionUtils.getStackTrace(exp));
-		}
 
 		return transferTokensResponse;
 	}

@@ -15,6 +15,7 @@ public class NodeConfigProperties {
 
 	private String baseUrl;
 	private String btcBalanceEndpoint;
+	private String ethBalanceEndpoint;
 	private String addressGenerationEndpoint;
 	private String btcTransferEndpoint;
 
@@ -46,6 +47,21 @@ public class NodeConfigProperties {
 	 */
 	public void setBtcBalanceEndpoint(String btcBalanceEndpoint) {
 		this.btcBalanceEndpoint = btcBalanceEndpoint;
+	}
+
+	/**
+	 * @return the ethBalanceEndpoint
+	 */
+	public String getEthBalanceEndpoint() {
+		return ethBalanceEndpoint;
+	}
+
+	/**
+	 * @param ethBalanceEndpoint
+	 *            the ethBalanceEndpoint to set
+	 */
+	public void setEthBalanceEndpoint(String ethBalanceEndpoint) {
+		this.ethBalanceEndpoint = ethBalanceEndpoint;
 	}
 
 	/**
