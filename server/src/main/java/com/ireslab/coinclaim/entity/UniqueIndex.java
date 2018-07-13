@@ -22,27 +22,65 @@ public class UniqueIndex {
 	@Column(name = "id")
 	private Long id;
 
-	@Column(name = "unique_index")
-	private BigInteger uniqueIndex;
+	@Column(name = "unique_company_index")
+	private BigInteger uniqueCompanyIndex;
 
+	@Column(name = "unique_user_index")
+	private BigInteger uniqueUserIndex;
+
+	/**
+	 * @return the id
+	 */
 	public Long getId() {
 		return id;
 	}
 
+	/**
+	 * @param id
+	 *            the id to set
+	 */
 	public void setId(Long id) {
 		this.id = id;
 	}
 
-	public BigInteger getUniqueIndex() {
-		return uniqueIndex;
+	/**
+	 * @return the uniqueCompanyIndex
+	 */
+	public BigInteger getUniqueCompanyIndex() {
+		return uniqueCompanyIndex;
 	}
 
-	public void setUniqueIndex(BigInteger uniqueIndex) {
-		this.uniqueIndex = uniqueIndex;
+	/**
+	 * @param uniqueCompanyIndex
+	 *            the uniqueCompanyIndex to set
+	 */
+	public void setUniqueCompanyIndex(BigInteger uniqueCompanyIndex) {
+		this.uniqueCompanyIndex = uniqueCompanyIndex;
 	}
 
+	/**
+	 * @return the uniqueUserIndex
+	 */
+	public BigInteger getUniqueUserIndex() {
+		return uniqueUserIndex;
+	}
+
+	/**
+	 * @param uniqueUserIndex
+	 *            the uniqueUserIndex to set
+	 */
+	public void setUniqueUserIndex(BigInteger uniqueUserIndex) {
+		this.uniqueUserIndex = uniqueUserIndex;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
-		return "UniqueIndex [id=" + id + ", uniqueIndex=" + uniqueIndex + "]";
+		return "UniqueIndex [id=" + id + ", uniqueCompanyIndex=" + uniqueCompanyIndex + ", uniqueUserIndex="
+				+ uniqueUserIndex + "]";
 	}
 }

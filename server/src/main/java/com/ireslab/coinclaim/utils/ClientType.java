@@ -4,7 +4,7 @@ package com.ireslab.coinclaim.utils;
  * @author iRESlab
  *
  */
-public enum RequestType {
+public enum ClientType {
 
-	BTC, ETH, ERC20
+	COMPANY, USER;
 }

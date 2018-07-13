@@ -12,21 +12,19 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 @JsonInclude(value = Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TransferTokensResponse extends BaseApiResponse {
+public class TokenDetailsRegistrationResponse extends BaseApiResponse {
 
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -3014657783343431256L;
-
-	private List<AccountDetails> accountDetails;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * @param status
 	 * @param code
 	 * @param message
 	 */
-	public TransferTokensResponse(Integer status, Integer code, String message) {
+	public TokenDetailsRegistrationResponse(Integer status, Integer code, String message) {
 		super(status, code, message);
 		// TODO Auto-generated constructor stub
 	}
@@ -36,7 +34,7 @@ public class TransferTokensResponse extends BaseApiResponse {
 	 * @param code
 	 * @param errors
 	 */
-	public TransferTokensResponse(Integer status, Integer code, List<Error> errors) {
+	public TokenDetailsRegistrationResponse(Integer status, Integer code, List<Error> errors) {
 		super(status, code, errors);
 		// TODO Auto-generated constructor stub
 	}
@@ -47,23 +45,20 @@ public class TransferTokensResponse extends BaseApiResponse {
 	 * @param message
 	 * @param errors
 	 */
-	public TransferTokensResponse(Integer status, Integer code, String message, List<Error> errors) {
+	public TokenDetailsRegistrationResponse(Integer status, Integer code, String message, List<Error> errors) {
 		super(status, code, message, errors);
 		// TODO Auto-generated constructor stub
 	}
 
 	/**
-	 * @return the accountDetails
+	 * @param refId
+	 * @param status
+	 * @param code
+	 * @param message
+	 * @param errors
 	 */
-	public List<AccountDetails> getAccountDetails() {
-		return accountDetails;
-	}
-
-	/**
-	 * @param accountDetails
-	 *            the accountDetails to set
-	 */
-	public void setAccountDetails(List<AccountDetails> accountDetails) {
-		this.accountDetails = accountDetails;
+	public TokenDetailsRegistrationResponse(String refId, Integer status, Integer code, String message, List<Error> errors) {
+		super(refId, status, code, message, errors);
+		// TODO Auto-generated constructor stub
 	}
 }

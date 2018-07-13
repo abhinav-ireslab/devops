@@ -17,16 +17,16 @@ import javax.persistence.TemporalType;
  *
  */
 @Entity
-@Table(name = "client_account")
-public class ClientAccount {
+@Table(name = "user_account")
+public class UserAccount {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-	@Column(name = "account_id")
-	private Integer accountId;
+	@Column(name = "user_account_id")
+	private Integer userAccountId;
 
-	@Column(name = "client_correlation_id")
-	private String clientCorrelationId;
+	@Column(name = "user_correlation_id")
+	private String userCorrelationId;
 
 	@Column(name = "child_index")
 	private BigInteger childIndex;
@@ -44,31 +44,31 @@ public class ClientAccount {
 	/**
 	 * @return the accountId
 	 */
-	public Integer getAccountId() {
-		return accountId;
+	public Integer getCompanyAccountId() {
+		return userAccountId;
 	}
 
 	/**
-	 * @param accountId
+	 * @param companyAccountId
 	 *            the accountId to set
 	 */
-	public void setAccountId(Integer accountId) {
-		this.accountId = accountId;
+	public void setCompanyAccountId(Integer companyAccountId) {
+		this.userAccountId = companyAccountId;
 	}
 
 	/**
 	 * @return the clientCorrelationId
 	 */
-	public String getClientCorrelationId() {
-		return clientCorrelationId;
+	public String getUserCorrelationId() {
+		return userCorrelationId;
 	}
 
 	/**
-	 * @param clientCorrelationId
+	 * @param userCorrelationId
 	 *            the companyCorrelationId to set
 	 */
-	public void setClientCorrelationId(String clientCorrelationId) {
-		this.clientCorrelationId = clientCorrelationId;
+	public void setUserCorrelationId(String userCorrelationId) {
+		this.userCorrelationId = userCorrelationId;
 	}
 
 	/**
@@ -138,7 +138,7 @@ public class ClientAccount {
 	 */
 	@Override
 	public String toString() {
-		return "CompanyAccount [accountId=" + accountId + ", companyCorrelationId=" + clientCorrelationId
+		return "CompanyAccount [accountId=" + userAccountId + ", companyCorrelationId=" + userCorrelationId
 				+ ", childIndex=" + childIndex + ", btcAddress=" + btcAddress + ", modifiedDate=" + modifiedDate + "]";
 	}
 }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.ireslab.coinclaim.entity.UniqueIndex;
 import com.ireslab.coinclaim.repository.UniqueAddressRepo;
 import com.ireslab.coinclaim.service.CommonService;
+import com.ireslab.coinclaim.utils.ClientType;
 
 /**
  * @author iRESlab
@@ -29,10 +30,12 @@ public class CommonServiceImpl implements CommonService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ireslab.coinclaim.service.CommonService#getUniqueAddressIndex()
+	 * @see
+	 * com.ireslab.coinclaim.service.CommonService#getUniqueAddressIndex(com.ireslab
+	 * .coinclaim.utils.ClientType)
 	 */
 	@Override
-	public BigInteger getUniqueAddressIndex() {
+	public BigInteger getUniqueAddressIndex(ClientType clientType) {
 		BigInteger index = null;
 
 		lock.lock();
@@ -46,11 +49,19 @@ public class CommonServiceImpl implements CommonService {
 
 			lastIndex = new UniqueIndex();
 			lastIndex.setId(1L);
-			lastIndex.setUniqueIndex(BigInteger.ZERO);
+
+			lastIndex.setUniqueCompanyIndex(BigInteger.ZERO);
+			lastIndex.setUniqueUserIndex(BigInteger.ZERO);
 		}
 
-		index = lastIndex.getUniqueIndex().add(BigInteger.ONE);
-		lastIndex.setUniqueIndex(index);
+		if (clientType.equals(ClientType.COMPANY)) {
+			index = lastIndex.getUniqueCompanyIndex().add(BigInteger.ONE);
+			lastIndex.setUniqueCompanyIndex(index);
+
+		} else if (clientType.equals(ClientType.USER)) {
+			index = lastIndex.getUniqueUserIndex().add(BigInteger.ONE);
+			lastIndex.setUniqueUserIndex(index);
+		}
 
 		lastIndex = uniqueAddressRepo.save(lastIndex);
 		lock.unlock();

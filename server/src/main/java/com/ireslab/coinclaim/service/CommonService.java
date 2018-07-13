@@ -2,6 +2,8 @@ package com.ireslab.coinclaim.service;
 
 import java.math.BigInteger;
 
+import com.ireslab.coinclaim.utils.ClientType;
+
 /**
  * @author iRESlab
  *
@@ -9,8 +11,9 @@ import java.math.BigInteger;
 public interface CommonService {
 
 	/**
+	 * @param clientType
 	 * @return
 	 */
-	public BigInteger getUniqueAddressIndex();
+	public BigInteger getUniqueAddressIndex(ClientType clientType);
 
 }

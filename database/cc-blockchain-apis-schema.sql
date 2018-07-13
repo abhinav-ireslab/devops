@@ -16,23 +16,45 @@ CREATE DATABASE /*!32312 IF NOT EXISTS*/`cc-blockchain-apis-schema` /*!40100 DEF
 
 USE `cc-blockchain-apis-schema`;
 
-/*Table structure for table `client_account` */
+/*Table structure for table `company_account` */
 
-DROP TABLE IF EXISTS `client_account`;
+DROP TABLE IF EXISTS `company_account`;
 
-CREATE TABLE `client_account` (
-  `account_id` int(11) NOT NULL AUTO_INCREMENT,
-  `client_correlation_id` varchar(50) NOT NULL,
+CREATE TABLE `company_account` (
+  `company_account_id` int(11) NOT NULL AUTO_INCREMENT,
+  `company_correlation_id` varchar(50) NOT NULL,
   `child_index` decimal(19,2) NOT NULL,
   `status` tinyint(4) NOT NULL DEFAULT '0',
-  `btc_address` varchar(50) NOT NULL,
+  `btc_address` varchar(50) DEFAULT NULL,
+  `eth_address` varchar(50) DEFAULT NULL,
   `date_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`account_id`),
+  PRIMARY KEY (`company_account_id`),
   UNIQUE KEY `UNIQUE_CHILD_INDEX` (`child_index`),
-  UNIQUE KEY `UNIQUE_COMPANY_CORRELATION_ID_INDEX` (`client_correlation_id`)
+  UNIQUE KEY `UNIQUE_COMPANY_CORRELATION_ID_INDEX` (`company_correlation_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-/*Data for the table `client_account` */
+/*Data for the table `company_account` */
+
+/*Table structure for table `company_token` */
+
+DROP TABLE IF EXISTS `company_token`;
+
+CREATE TABLE `company_token` (
+  `token_id` int(11) NOT NULL AUTO_INCREMENT,
+  `company_id` int(11) NOT NULL,
+  `token_name` varchar(100) NOT NULL,
+  `token_symbol` varchar(20) NOT NULL,
+  `token_decimals` bigint(20) NOT NULL,
+  `token_contract_address` text NOT NULL,
+  `token_contract_binary` text NOT NULL,
+  `created_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`token_id`),
+  UNIQUE KEY `token_symbol_unique` (`token_symbol`),
+  KEY `company_id_fk` (`company_id`),
+  CONSTRAINT `company_id_fk` FOREIGN KEY (`company_id`) REFERENCES `company_account` (`company_account_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+/*Data for the table `company_token` */
 
 /*Table structure for table `oauth_access_token` */
 
@@ -57,14 +79,31 @@ DROP TABLE IF EXISTS `unique_index`;
 
 CREATE TABLE `unique_index` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `unique_index` decimal(19,2) NOT NULL,
+  `unique_company_index` decimal(19,2) NOT NULL,
+  `unique_user_index` decimal(19,2) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 /*Data for the table `unique_index` */
 
-insert  into `unique_index`(`id`,`unique_index`) values 
-(1,'0.00');
+/*Table structure for table `user_account` */
+
+DROP TABLE IF EXISTS `user_account`;
+
+CREATE TABLE `user_account` (
+  `user_account_id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_correlation_id` varchar(50) NOT NULL,
+  `child_index` decimal(19,2) NOT NULL,
+  `status` tinyint(4) NOT NULL DEFAULT '0',
+  `btc_address` varchar(50) DEFAULT NULL,
+  `eth_address` varchar(50) DEFAULT NULL,
+  `date_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_account_id`),
+  UNIQUE KEY `UNIQUE_CHILD_INDEX` (`child_index`),
+  UNIQUE KEY `UNIQUE_USER_CORRELATION_ID_INDEX` (`user_correlation_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+/*Data for the table `user_account` */
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

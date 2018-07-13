@@ -10,30 +10,30 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 @JsonInclude(value = Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TransferTokensRequest extends BaseApiRequest {
+public class TokenTransferRequest extends BaseApiRequest {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 483641603937676982L;
 
-	private String beneficiaryAddress;
+	private String userCorrelationId;
 
 	private String noOfTokens;
 
 	/**
-	 * @return the beneficiaryAddress
+	 * @return the userCorrelationId
 	 */
-	public String getBeneficiaryAddress() {
-		return beneficiaryAddress;
+	public String getUserCorrelationId() {
+		return userCorrelationId;
 	}
 
 	/**
-	 * @param beneficiaryAddress
-	 *            the beneficiaryAddress to set
+	 * @param userCorrelationId
+	 *            the userCorrelationId to set
 	 */
-	public void setBeneficiaryAddress(String beneficiaryAddress) {
-		this.beneficiaryAddress = beneficiaryAddress;
+	public void setUserCorrelationId(String userCorrelationId) {
+		this.userCorrelationId = userCorrelationId;
 	}
 
 	/**
@@ -50,5 +50,4 @@ public class TransferTokensRequest extends BaseApiRequest {
 	public void setNoOfTokens(String noOfTokens) {
 		this.noOfTokens = noOfTokens;
 	}
-
 }

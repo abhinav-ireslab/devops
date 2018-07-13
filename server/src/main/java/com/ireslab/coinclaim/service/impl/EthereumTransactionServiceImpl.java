@@ -13,7 +13,12 @@ import com.ireslab.coinclaim.dto.AddressDto;
 import com.ireslab.coinclaim.dto.TransactionDto;
 import com.ireslab.coinclaim.properties.NodeConfigProperties;
 import com.ireslab.coinclaim.service.BlockchainTransactionService;
+import com.ireslab.coinclaim.utils.ClientType;
 
+/**
+ * @author iRESlab
+ *
+ */
 @Service
 public class EthereumTransactionServiceImpl implements BlockchainTransactionService {
 
@@ -50,18 +55,16 @@ public class EthereumTransactionServiceImpl implements BlockchainTransactionServ
 		return transactionDto;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.ireslab.coinclaim.service.BlockchainTransactionService#generateAddress(
-	 * java.math.BigInteger)
+	/**
+	 * @param index
+	 * @param clientType
+	 * @return
 	 */
 	@Override
-	public AddressDto generateAddress(BigInteger index) {
+	public AddressDto generateAddress(BigInteger index, ClientType clientType) {
 
 		LOG.debug("Calling node server to retrieve addresses for index - " + index);
-		return bitcoinTxnService.generateAddress(index);
+		return bitcoinTxnService.generateAddress(index, clientType);
 	}
 
 	@Override
@@ -70,4 +73,14 @@ public class EthereumTransactionServiceImpl implements BlockchainTransactionServ
 		return null;
 	}
 
+	/**
+	 * @param index
+	 * @param clientType
+	 * @return
+	 */
+	@Override
+	public AddressDto derivePrivateKey(BigInteger index, ClientType clientType) {
+
+		return bitcoinTxnService.generateAddress(index, clientType);
+	}
 }

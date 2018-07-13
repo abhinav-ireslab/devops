@@ -16,5 +16,4 @@ public class GenerateAddressRequest extends BaseApiRequest {
 	 * 
 	 */
 	private static final long serialVersionUID = -6201281112504555641L;
-
 }

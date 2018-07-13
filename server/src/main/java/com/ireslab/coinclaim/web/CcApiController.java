@@ -17,8 +17,10 @@ import com.ireslab.coinclaim.model.AccountBalanceRequest;
 import com.ireslab.coinclaim.model.AccountBalanceResponse;
 import com.ireslab.coinclaim.model.GenerateAddressRequest;
 import com.ireslab.coinclaim.model.GenerateAddressResponse;
-import com.ireslab.coinclaim.model.TransferTokensRequest;
-import com.ireslab.coinclaim.model.TransferTokensResponse;
+import com.ireslab.coinclaim.model.TokenDetailsRegistrationRequest;
+import com.ireslab.coinclaim.model.TokenDetailsRegistrationResponse;
+import com.ireslab.coinclaim.model.TokenTransferRequest;
+import com.ireslab.coinclaim.model.TokenTransferResponse;
 import com.ireslab.coinclaim.service.CcApiService;
 
 /**
@@ -45,7 +47,7 @@ public class CcApiController {
 	 * @throws JsonProcessingException
 	 */
 	@RequestMapping(value = "address", method = RequestMethod.POST)
-	public ResponseEntity<GenerateAddressResponse> generateAddress(
+	public ResponseEntity<GenerateAddressResponse> generateCompanyAddress(
 			@RequestBody GenerateAddressRequest generateAddressRequest) throws JsonProcessingException {
 
 		GenerateAddressResponse generateAddressResponse = null;
@@ -79,6 +81,26 @@ public class CcApiController {
 	}
 
 	/**
+	 * @param tokenDetailsRegistrationReq
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value = "registerTokenDetails", method = RequestMethod.POST)
+	public ResponseEntity<TokenDetailsRegistrationResponse> registerTokenContract(
+			@RequestBody TokenDetailsRegistrationRequest tokenDetailsRegistrationReq) throws JsonProcessingException {
+
+		TokenDetailsRegistrationResponse tokenDetailsRegistrationResponse = null;
+		LOG.info("Request recieved for Account Balance - "
+				+ objectWriter.writeValueAsString(tokenDetailsRegistrationReq));
+
+		tokenDetailsRegistrationResponse = ccApiService.saveTokenDetails(tokenDetailsRegistrationReq);
+		LOG.info("Response sent for Account Balance - "
+				+ objectWriter.writeValueAsString(tokenDetailsRegistrationResponse));
+
+		return new ResponseEntity<>(tokenDetailsRegistrationResponse, HttpStatus.OK);
+	}
+
+	/**
 	 * POST http://localhost:8180/cc-blockchain-api/transfer
 	 * 
 	 * @param accountBalanceRequest
@@ -86,10 +108,10 @@ public class CcApiController {
 	 * @throws JsonProcessingException
 	 */
 	@RequestMapping(value = "transfer", method = RequestMethod.POST)
-	public ResponseEntity<TransferTokensResponse> transferTokens(
-			@RequestBody TransferTokensRequest transferTokensRequest) throws JsonProcessingException {
+	public ResponseEntity<TokenTransferResponse> transferTokens(@RequestBody TokenTransferRequest transferTokensRequest)
+			throws JsonProcessingException {
 
-		TransferTokensResponse transferTokensResponse = null;
+		TokenTransferResponse transferTokensResponse = null;
 		LOG.info("Request recieved for Account Balance - " + objectWriter.writeValueAsString(transferTokensRequest));
 
 		transferTokensResponse = ccApiService.transferTokens(transferTokensRequest);
@@ -97,4 +119,26 @@ public class CcApiController {
 
 		return new ResponseEntity<>(transferTokensResponse, HttpStatus.OK);
 	}
+
+	/**
+	 * @param accountBalanceRequest
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	// @RequestMapping(value = "user/tokenBalance", method = RequestMethod.POST)
+	// public ResponseEntity<AccountBalanceResponse> userTokenBalance(
+	// @RequestBody AccountBalanceRequest accountBalanceRequest) throws
+	// JsonProcessingException {
+	//
+	// AccountBalanceResponse accountBalanceResponse = null;
+	// LOG.info("Request recieved for Token Balance - " +
+	// objectWriter.writeValueAsString(accountBalanceRequest));
+	//
+	// accountBalanceResponse =
+	// ccApiService.retrieveUserTokenBalance(accountBalanceRequest);
+	// LOG.info("Response sent for Account Balance - " +
+	// objectWriter.writeValueAsString(accountBalanceResponse));
+	//
+	// return new ResponseEntity<>(accountBalanceResponse, HttpStatus.OK);
+	// }
 }

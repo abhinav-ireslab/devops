@@ -1,5 +1,4 @@
 var properties = require('./properties');
-var hdPrivXprivkey = properties.hdPrivXprivkey;
 
 var bodyParser = require('body-parser');
 var express = require('express');
@@ -16,6 +15,7 @@ const unit = bitcore.Unit;
 
 var Web3 = require('web3');
 var web3 = new Web3(new Web3.providers.HttpProvider(properties.gethUrl));
+
 var BigNumber = require('bignumber.js');
 const EthereumTx = require('ethereumjs-tx')
 
@@ -35,17 +35,52 @@ var server = app.listen(8081, function() {
     console.log("Example app listening at http://%s:%s", host, port)
 });
 
-function getRootKey() {
+function getCompanyAccountsRootKey() {
     /** ************************************************************ */
     /* Generating HD Wallet using memonic data */
     /** ************************************************************ */
-    var memonicString = properties.memonic;
-    var code = new Mnemonic(memonicString);
-    var passphrase = properties.password;
-    var network = properties.network
-    var hdpriv = code.toHDPrivateKey(passphrase, network);
+    var code = new Mnemonic(properties.companyAccountsMemonic);
+    var hdpriv = code.toHDPrivateKey(properties.companyAccountsPassword, properties.network);
     return hdpriv;
 }
+
+function getUserAccountsRootKey() {
+    /** ************************************************************ */
+    /* Generating HD Wallet using memonic data */
+    /** ************************************************************ */
+    var code = new Mnemonic(properties.userAccountsMemonic);
+    var hdpriv = code.toHDPrivateKey( properties.userAccountsPassword, properties.network);
+    return hdpriv;
+}
+
+app.post('/derive_private_key', function(req, res){
+	
+	console.log('POST REQUEST TO DERIVE PRIVATE KEY');
+	
+	var body = req.body;
+	var clientType = body.clientType;
+	
+	 var hdpriv;
+     if(clientType == "COMPANY"){
+     	hdpriv = getCompanyAccountsRootKey();
+     }else if(clientType = "USER"){
+     	hdpriv = getUserAccountsRootKey();
+     }
+
+     var privateKey = getEthereumAddressPrivateKey(hdpriv,body.index);
+     var ethereumAddress = getEthereumAddress(hdpriv, body.index);
+     
+	 var result = {
+			 uniqueEthereumAddress: ethereumAddress,
+             privateKey: privateKey,
+             clientType: clientType,
+             index: body.index
+     }
+	 
+	 console.log(result);
+	 res.end(JSON.stringify(result));
+});
+
 
 app
     .post(
@@ -62,10 +97,19 @@ app
             /** ************************************************************ */
             var body = req.body;
             var index = body.index;
+            var clientType = body.clientType;
 
-            console.log("index : " + index)
-
-            var hdpriv = getRootKey();
+            var hdpriv;
+            if(clientType == "COMPANY"){
+            	console.log('GENERATING ADDRESSES FOR COMPANY');
+            	hdpriv = getCompanyAccountsRootKey();
+            	
+            }else if(clientType == "USER"){
+            	
+            	console.log('GENERATING ADDRESSES FOR USER');
+            	hdpriv = getUserAccountsRootKey();
+            }
+            
             /** ************************************************************ */
             /* BITCOIN ADDRESS */
             /** ************************************************************ */
@@ -84,9 +128,12 @@ app
             /* GENERATING RESPONSE */
             /** ************************************************************ */
 
+            var ethereumPrivateKey = getEthereumAddressPrivateKey(hdpriv,body.index);
+            
             var result = {
                 uniqueEthereumAddress: ethereumAddress,
                 uniqueBitcoinAddress: bitcoinAddress,
+                ethereumPrivateKey: ethereumPrivateKey,
                 index: index
             }
 
@@ -146,6 +193,44 @@ app.post('/check_eth_balance', function(req, res) {
 });
 
 
+app.post('/check_token_balance', function(req, res){
+	
+	var body = req.body;
+	var beneficiaryAddress = body.beneficiaryAddress;
+	var tokenAddress = body.tokenAddress;
+	
+	console.log('POST REQUEST TO CHECK TOKEN BALANCE FOR ADDRESS - ' + beneficiaryAddress);
+	
+	console.log('Web3.sha3("balanceOf(address)") - ' + web3.utils.sha3("balanceOf(address)"));
+	
+// var tokenContract = web3.eth.contract("").at(contractAddress)
+// var decimal = tokenContract.decimals()
+// var balance = tokenContract.balanceOf(address)
+// var adjustedBalance = balance / Math.pow(10, decimal)
+// var tokenName = tokenContract.name()
+// var tokenSymbol = tokenContract.symbol()
+	
+	web3.eth.getBalance(beneficiaryAddress, function(error, balance) {
+
+    	console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'))
+
+        var result = {
+    		beneficiaryAddress: beneficiaryAddress,
+    		balance: balance
+        }
+        
+        res.end(JSON.stringify(result));
+    });
+	
+// var result = {
+// beneficiaryAddress: beneficiaryAddress,
+// balance: balance
+// }
+// res.end(JSON.stringify(result));
+	
+});
+
+
 /** ************************************************************ */
 /* CHECKING BITCOIN BALANCE BY ADDRESS */
 /** ************************************************************ */
@@ -200,7 +285,7 @@ app
             });
 
             var body = req.body;
-            var to = properties.etherTo;
+            var to = body.toAddress;
             /** ************************************************************ */
             /* Read request data */
             /** ************************************************************ */
@@ -565,11 +650,11 @@ app
                             }
 
                             /*
-                             * if(errorBody.errorDesc != ''){
-                             * res.end(JSON.stringify(errorBody)); }else if
-                             * (balance <= 0){
-                             * res.end(JSON.stringify(successRes)); }
-                             */
+							 * if(errorBody.errorDesc != ''){
+							 * res.end(JSON.stringify(errorBody)); }else if
+							 * (balance <= 0){
+							 * res.end(JSON.stringify(successRes)); }
+							 */
 
                         } catch (e) {
                             console.log("Exception occured " +

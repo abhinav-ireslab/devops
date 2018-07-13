@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AccountDetails {
 
-	private String type;
+	private String tokenType;
 
 	private String address;
 
@@ -23,7 +23,7 @@ public class AccountDetails {
 	 */
 	public AccountDetails(String type, String address, String balance) {
 		super();
-		this.type = type;
+		this.tokenType = type;
 		this.address = address;
 		this.balance = balance;
 	}
@@ -31,16 +31,16 @@ public class AccountDetails {
 	/**
 	 * @return the type
 	 */
-	public String getType() {
-		return type;
+	public String getTokenType() {
+		return tokenType;
 	}
 
 	/**
-	 * @param type
+	 * @param tokenType
 	 *            the type to set
 	 */
-	public void setType(String type) {
-		this.type = type;
+	public void setTokenType(String tokenType) {
+		this.tokenType = tokenType;
 	}
 
 	/**
@@ -84,7 +84,8 @@ public class AccountDetails {
 	 * @param tokenCode
 	 *            the tokenCode to set
 	 */
-	public void setTokenCode(String tokenCode) {
+	public AccountDetails setTokenCode(String tokenCode) {
 		this.tokenCode = tokenCode;
+		return this;
 	}
 }

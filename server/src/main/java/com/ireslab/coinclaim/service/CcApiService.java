@@ -4,8 +4,10 @@ import com.ireslab.coinclaim.model.AccountBalanceRequest;
 import com.ireslab.coinclaim.model.AccountBalanceResponse;
 import com.ireslab.coinclaim.model.GenerateAddressRequest;
 import com.ireslab.coinclaim.model.GenerateAddressResponse;
-import com.ireslab.coinclaim.model.TransferTokensRequest;
-import com.ireslab.coinclaim.model.TransferTokensResponse;
+import com.ireslab.coinclaim.model.TokenDetailsRegistrationRequest;
+import com.ireslab.coinclaim.model.TokenDetailsRegistrationResponse;
+import com.ireslab.coinclaim.model.TokenTransferRequest;
+import com.ireslab.coinclaim.model.TokenTransferResponse;
 
 /**
  * @author iRESlab
@@ -29,5 +31,21 @@ public interface CcApiService {
 	 * @param transferTokensRequest
 	 * @return
 	 */
-	public TransferTokensResponse transferTokens(TransferTokensRequest transferTokensRequest);
+	public TokenTransferResponse transferTokens(TokenTransferRequest transferTokensRequest);
+
+	/**
+	 * @param tokenDetailsRegistrationRequest
+	 * @return
+	 */
+	public TokenDetailsRegistrationResponse saveTokenDetails(
+			TokenDetailsRegistrationRequest tokenDetailsRegistrationRequest);
+	
+
+	/**
+	 * @param accountBalanceRequest
+	 * @return
+	 */
+	// public AccountBalanceResponse retrieveUserTokenBalance(AccountBalanceRequest
+	// accountBalanceRequest);
+
 }

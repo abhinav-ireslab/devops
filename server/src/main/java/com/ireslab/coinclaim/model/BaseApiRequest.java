@@ -21,7 +21,9 @@ public class BaseApiRequest implements Serializable {
 
 	private String clientCorrelationId;
 
-	private String type;
+	private String clientType;
+
+	private String tokenType;
 
 	private String tokenCode;
 
@@ -41,18 +43,33 @@ public class BaseApiRequest implements Serializable {
 	}
 
 	/**
-	 * @return the type
+	 * @return the clientType
 	 */
-	public String getType() {
-		return type;
+	public String getClientType() {
+		return clientType;
 	}
 
 	/**
-	 * @param type
+	 * @param clientType
+	 *            the clientType to set
+	 */
+	public void setClientType(String clientType) {
+		this.clientType = clientType;
+	}
+
+	/**
+	 * @return the type
+	 */
+	public String getTokenType() {
+		return tokenType;
+	}
+
+	/**
+	 * @param tokenType
 	 *            the type to set
 	 */
-	public void setType(String type) {
-		this.type = type;
+	public void setTokenType(String tokenType) {
+		this.tokenType = tokenType;
 	}
 
 	/**
@@ -72,7 +89,7 @@ public class BaseApiRequest implements Serializable {
 
 	@Override
 	public String toString() {
-		return "BaseApiRequest [clientCorrelationId=" + clientCorrelationId + ", type=" + type + "]";
+		return "BaseApiRequest [clientCorrelationId=" + clientCorrelationId + ", tokenType=" + tokenType + "]";
 	}
 
 }

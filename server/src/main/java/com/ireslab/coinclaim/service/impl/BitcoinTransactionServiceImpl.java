@@ -12,6 +12,7 @@ import com.ireslab.coinclaim.dto.AddressDto;
 import com.ireslab.coinclaim.dto.TransactionDto;
 import com.ireslab.coinclaim.properties.NodeConfigProperties;
 import com.ireslab.coinclaim.service.BlockchainTransactionService;
+import com.ireslab.coinclaim.utils.ClientType;
 
 /**
  * @author iRESlab
@@ -36,13 +37,14 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 	 * java.math.BigInteger)
 	 */
 	@Override
-	public AddressDto generateAddress(BigInteger index) {
+	public AddressDto generateAddress(BigInteger index, ClientType clientType) {
 
 		LOG.debug("Calling node server to generate unique bitcoin address for index - " + index);
 
 		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getAddressGenerationEndpoint();
 		AddressDto addressDto = new AddressDto();
 		addressDto.setIndex(index);
+		addressDto.setClientType(clientType.name());
 
 		addressDto = restTemplate.postForObject(url, addressDto, AddressDto.class);
 		return addressDto;
@@ -84,5 +86,22 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 
 		// TODO Auto-generated method stub
 		return transactionDto;
+	}
+
+	/**
+	 * @param index
+	 * @param clientType
+	 */
+	public AddressDto derivePrivateKey(BigInteger index, ClientType clientType) {
+
+		LOG.debug("Calling node server to derive private key for address with index - " + index);
+
+		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getAddressGenerationEndpoint();
+		AddressDto addressDto = new AddressDto();
+		addressDto.setIndex(index);
+		addressDto.setClientType(clientType.name());
+
+		addressDto = restTemplate.postForObject(url, addressDto, AddressDto.class);
+		return addressDto;
 	}
 }

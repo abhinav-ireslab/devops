@@ -14,6 +14,10 @@ public class AddressDto {
 
 	private String uniqueEthereumAddress;
 
+	private String clientType;
+
+	private String ethereumAddressPrivateKey;
+
 	/**
 	 * @return the index
 	 */
@@ -57,6 +61,36 @@ public class AddressDto {
 	 */
 	public void setUniqueEthereumAddress(String uniqueEthereumAddress) {
 		this.uniqueEthereumAddress = uniqueEthereumAddress;
+	}
+
+	/**
+	 * @return the accountType
+	 */
+	public String getClientType() {
+		return clientType;
+	}
+
+	/**
+	 * @param clientType
+	 *            the accountType to set
+	 */
+	public void setClientType(String clientType) {
+		this.clientType = clientType;
+	}
+
+	/**
+	 * @return the privateKey
+	 */
+	public String getEthereumAddressPrivateKey() {
+		return ethereumAddressPrivateKey;
+	}
+
+	/**
+	 * @param ethereumAddressPrivateKey
+	 *            the privateKey to set
+	 */
+	public void setEthereumAddressPrivateKey(String ethereumAddressPrivateKey) {
+		this.ethereumAddressPrivateKey = ethereumAddressPrivateKey;
 	}
 
 	/*
