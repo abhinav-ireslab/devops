@@ -21,6 +21,8 @@ public class TokenTransferRequest extends BaseApiRequest {
 
 	private String noOfTokens;
 
+	private String beneficiaryAddress;
+
 	/**
 	 * @return the userCorrelationId
 	 */
@@ -49,5 +51,20 @@ public class TokenTransferRequest extends BaseApiRequest {
 	 */
 	public void setNoOfTokens(String noOfTokens) {
 		this.noOfTokens = noOfTokens;
+	}
+
+	/**
+	 * @return the beneficiaryAddress
+	 */
+	public String getBeneficiaryAddress() {
+		return beneficiaryAddress;
+	}
+
+	/**
+	 * @param beneficiaryAddress
+	 *            the beneficiaryAddress to set
+	 */
+	public void setBeneficiaryAddress(String beneficiaryAddress) {
+		this.beneficiaryAddress = beneficiaryAddress;
 	}
 }

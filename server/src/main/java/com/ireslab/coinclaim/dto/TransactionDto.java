@@ -97,7 +97,6 @@ public class TransactionDto extends NodeResponse {
 	@Override
 	public String toString() {
 		return "TransactionDto [fromAddress=" + fromAddress + ", index=" + index + ", toAddress=" + toAddress
-				+ ", amount=" + amount + ", transactionReciept=" + transactionReciept + ", toString()="
-				+ super.toString() + "]";
+				+ ", amount=" + amount + ", transactionReciept=" + transactionReciept + "]";
 	}
 }

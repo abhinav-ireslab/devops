@@ -72,7 +72,7 @@ app.post('/derive_private_key', function(req, res){
      
 	 var result = {
 			 uniqueEthereumAddress: ethereumAddress,
-             privateKey: privateKey,
+			 ethereumAddressPrivateKey: privateKey,
              clientType: clientType,
              index: body.index
      }
@@ -127,13 +127,10 @@ app
             /** ************************************************************ */
             /* GENERATING RESPONSE */
             /** ************************************************************ */
-
-            var ethereumPrivateKey = getEthereumAddressPrivateKey(hdpriv,body.index);
             
             var result = {
                 uniqueEthereumAddress: ethereumAddress,
                 uniqueBitcoinAddress: bitcoinAddress,
-                ethereumPrivateKey: ethereumPrivateKey,
                 index: index
             }
 
@@ -180,7 +177,6 @@ app.post('/check_eth_balance', function(req, res) {
     
     console.log('POST REQUEST TO CHECK ETH BALANCE FOR ADDRESS - ' + fromAddress);
     web3.eth.getBalance(fromAddress, function(error, balance) {
-
     	console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'))
 
         var result = {
@@ -343,7 +339,7 @@ app
                                         .log("Transaction Object - " +
                                             txnObj);
 
-                                    var xpriv = getRootKey();
+                                    var xpriv = getCompanyAccountsRootKey();
                                     const privateKeyHex = getEthereumAddressPrivateKey(
                                         xpriv,
                                         index);
@@ -433,16 +429,13 @@ app
             var index = body.index;
             var balance = body.amount;
 
-            console.log('nBitcoin transfer request FROM - ' +
-                bitcoinFromAddress);
-            console.log('To - ' + bitcoinToAddress);
+            console.log('BITCOIN TRANSFER REQUEST FROM - ' +
+                bitcoinFromAddress + ', TO - ' + bitcoinToAddress);
 
             const unit = bitcore.Unit;
             const minerFee = unit.fromMilis(0.128).toSatoshis();
 
             const bitcore_transaction = ""; //
-
-            console.log('Miner Fee - ' + minerFee);
 
             var result = {
                 fromAddress: bitcoinFromAddress,
@@ -460,11 +453,11 @@ app
                     function(error, utxos) {
 
                         try {
-
                             var fromAddress = new Address(
                                 bitcoinFromAddress);
                             var toAddress = new Address(
                                 bitcoinToAddress);
+                            
                             if (error) {
                                 // any other error
                                 result.code = 100;
@@ -493,7 +486,7 @@ app
 
                                 var readBalance = 0;
                                 for (var i = 0; i < utxos.length; i++) {
-                                    if (utxos[i]['confirmations'] > 0) {
+                                    if (utxos[i]['confirmations'] == 'undefined' || utxos[i]['confirmations'] == null || utxos[i]['confirmations'] > 0) {
                                         readBalance += unit
                                             .fromSatoshis(
                                                 parseInt(utxos[i]['satoshis']))
@@ -529,7 +522,7 @@ app
                                     /* BITCOIN Private key */
                                     /** ************************************************************ */
 
-                                    var xpriv = getRootKey();
+                                    var xpriv = getCompanyAccountsRootKey();
                                     const bitcoinPrivatekey = getBitcoinPrivateKey(
                                         xpriv, index);
 

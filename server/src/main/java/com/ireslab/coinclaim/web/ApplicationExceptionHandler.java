@@ -33,7 +33,7 @@ public class ApplicationExceptionHandler {
 	 */
 	@ExceptionHandler(value = ApiException.class)
 	public ResponseEntity<BaseApiResponse> handleApiException(ApiException exp) {
-
+		
 		LOG.error("API Exception | Error description-" + ExceptionUtils.getStackTrace(exp));
 
 		BaseApiResponse baseApiResponse = new BaseApiResponse();
@@ -41,7 +41,7 @@ public class ApplicationExceptionHandler {
 		baseApiResponse.setErrors(exp.getErrors() == null
 				? Arrays.asList(new Error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error"))
 				: exp.getErrors());
-
+		
 		baseApiResponse.setCode(exp.getCode() == null ? ResponseCode.GENERAL_ERROR.getCode() : exp.getCode());
 		baseApiResponse.setMessage(exp.getMessage() == null ? "Internal Server Error" : exp.getMessage());
 		baseApiResponse.setStatus(

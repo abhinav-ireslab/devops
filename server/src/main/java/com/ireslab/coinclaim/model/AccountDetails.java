@@ -17,13 +17,27 @@ public class AccountDetails {
 	private String tokenCode;
 
 	/**
-	 * @param type
+	 * @param tokenType
 	 * @param address
 	 * @param balance
 	 */
-	public AccountDetails(String type, String address, String balance) {
+	public AccountDetails(String tokenType, String address, String balance) {
 		super();
-		this.tokenType = type;
+		this.tokenType = tokenType;
+		this.address = address;
+		this.balance = balance;
+	}
+
+	/**
+	 * @param tokenType
+	 * @param tokenCode
+	 * @param address
+	 * @param balance
+	 */
+	public AccountDetails(String tokenType, String tokenCode, String address, String balance) {
+		super();
+		this.tokenType = tokenType;
+		this.tokenCode = tokenCode;
 		this.address = address;
 		this.balance = balance;
 	}

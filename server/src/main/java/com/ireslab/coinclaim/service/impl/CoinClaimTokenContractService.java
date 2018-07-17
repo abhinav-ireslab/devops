@@ -70,7 +70,7 @@ public class CoinClaimTokenContractService extends Contract {
 	 * @param tokenQuantity
 	 */
 	@SuppressWarnings("rawtypes")
-	public TransactionReceipt allocateTokens(String beneficiaryAddress, BigInteger tokenQuantity) {
+	public TransactionReceipt allocateTokens(String beneficiaryAddress, BigInteger tokenQuantity) throws Exception {
 
 		LOG.debug("Request received for token allocation for beneficiaryAddress - " + beneficiaryAddress
 				+ ", tokenQuantity - " + tokenQuantity);
@@ -87,9 +87,9 @@ public class CoinClaimTokenContractService extends Contract {
 			LOG.debug("Transaction Receipt Status - " + transactionReceipt.getStatus());
 
 		} catch (Exception exp) {
-
 			LOG.error("Error occurred while executing token allocation transaction - "
 					+ ExceptionUtils.getStackTrace(exp));
+			throw new Exception(exp);
 		}
 
 		return transactionReceipt;
@@ -102,6 +102,7 @@ public class CoinClaimTokenContractService extends Contract {
 	@SuppressWarnings("rawtypes")
 	public BigInteger retrieveBalance(String beneficiaryAddress) {
 
+		BigInteger balance = null;
 		LOG.debug("Request received for retrieving balance for beneficiaryAddress - " + beneficiaryAddress);
 
 		Function tokenAllocationFunction = new Function(BALANCE_CHECK_METHOD,
@@ -110,8 +111,9 @@ public class CoinClaimTokenContractService extends Contract {
 				}));
 
 		try {
-			LOG.debug("Executing transaction - " + tokenAllocationFunction);
-			return ((BigInteger) executeCallSingleValueReturn(tokenAllocationFunction).getValue());
+			balance = (BigInteger) executeCallSingleValueReturn(tokenAllocationFunction).getValue();
+			LOG.debug("Balance - " + balance);
+			return balance;
 
 		} catch (Exception exp) {
 			LOG.error("Error occurred while executing token allocation transaction - "

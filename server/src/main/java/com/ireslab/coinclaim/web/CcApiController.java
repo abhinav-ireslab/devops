@@ -85,7 +85,7 @@ public class CcApiController {
 	 * @return
 	 * @throws JsonProcessingException
 	 */
-	@RequestMapping(value = "registerTokenDetails", method = RequestMethod.POST)
+	@RequestMapping(value = "company/token", method = RequestMethod.POST)
 	public ResponseEntity<TokenDetailsRegistrationResponse> registerTokenContract(
 			@RequestBody TokenDetailsRegistrationRequest tokenDetailsRegistrationReq) throws JsonProcessingException {
 

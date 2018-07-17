@@ -121,7 +121,7 @@ contract CoinClaimToken is StandardToken, Ownable{
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        cap = 21000000000000000000000000;
+        cap = 20000000000000000000000000;
     }
 
     function mint(address _to, uint256 _amount) public onlyOwner returns (bool){

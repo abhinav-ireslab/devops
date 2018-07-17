@@ -67,7 +67,6 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 		transactionDto.setFromAddress(address);
 
 		transactionDto = restTemplate.postForObject(url, transactionDto, TransactionDto.class);
-
 		return transactionDto;
 	}
 
@@ -96,7 +95,7 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 
 		LOG.debug("Calling node server to derive private key for address with index - " + index);
 
-		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getAddressGenerationEndpoint();
+		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getPrivateKeyDerivationEndpoint();
 		AddressDto addressDto = new AddressDto();
 		addressDto.setIndex(index);
 		addressDto.setClientType(clientType.name());

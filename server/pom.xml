@@ -64,7 +64,7 @@
 			<optional>true</optional>
 		</dependency>
 
-	
+
 
 		<dependency>
 			<groupId>mysql</groupId>
@@ -90,23 +90,17 @@
 			<groupId>org.web3j</groupId>
 			<artifactId>web3j-spring-boot-starter</artifactId>
 			<version>1.5.0</version>
-			
-			<exclusions>
-				<exclusion>
-					<artifactId>bcprov-jdk15on</artifactId>
-					<groupId>org.bouncycastle</groupId>
-				</exclusion>
-			</exclusions>
-			
+
+			<!-- <exclusions> <exclusion> <artifactId>bcprov-jdk15on</artifactId> 
+				<groupId>org.bouncycastle</groupId> </exclusion> </exclusions> -->
+
 		</dependency>
-		
-		
-			<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
-		<!-- <dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.54</version>
-		</dependency> -->
+
+
+		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
+		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
+		<!-- <dependency> <groupId>org.bouncycastle</groupId> <artifactId>bcprov-jdk15on</artifactId> 
+			<version>1.60</version> </dependency> -->
 
 		<!-- <dependency> <groupId>org.apache.commons</groupId> <artifactId>commons-lang</artifactId> 
 			<version>3.2</version> </dependency> -->

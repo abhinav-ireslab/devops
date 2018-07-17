@@ -25,7 +25,7 @@ public class BaseApiRequest implements Serializable {
 
 	private String tokenType;
 
-	private String tokenCode;
+	private String tokenSymbol;
 
 	/**
 	 * @return the companyCorrelationId
@@ -75,16 +75,16 @@ public class BaseApiRequest implements Serializable {
 	/**
 	 * @return the tokenCode
 	 */
-	public String getTokenCode() {
-		return tokenCode;
+	public String getTokenSymbol() {
+		return tokenSymbol;
 	}
 
 	/**
 	 * @param tokenCode
 	 *            the tokenCode to set
 	 */
-	public void setTokenCode(String tokenCode) {
-		this.tokenCode = tokenCode;
+	public void setTokenSymbol(String tokenCode) {
+		this.tokenSymbol = tokenCode;
 	}
 
 	@Override

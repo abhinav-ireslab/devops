@@ -18,6 +18,7 @@ public class NodeConfigProperties {
 	private String ethBalanceEndpoint;
 	private String addressGenerationEndpoint;
 	private String btcTransferEndpoint;
+	private String ethTransferEndpoint;
 	private String privateKeyDerivationEndpoint;
 
 	/**
@@ -93,6 +94,21 @@ public class NodeConfigProperties {
 	 */
 	public void setBtcTransferEndpoint(String btcTransferEndpoint) {
 		this.btcTransferEndpoint = btcTransferEndpoint;
+	}
+
+	/**
+	 * @return the ethTransferEndpoint
+	 */
+	public String getEthTransferEndpoint() {
+		return ethTransferEndpoint;
+	}
+
+	/**
+	 * @param ethTransferEndpoint
+	 *            the ethTransferEndpoint to set
+	 */
+	public void setEthTransferEndpoint(String ethTransferEndpoint) {
+		this.ethTransferEndpoint = ethTransferEndpoint;
 	}
 
 	/**

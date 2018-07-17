@@ -18,7 +18,6 @@ public class TokenDetailsRegistrationRequest extends BaseApiRequest {
 	private static final long serialVersionUID = -6201281112504555641L;
 
 	private String tokenName;
-	private String tokenSymbol;
 	private String tokenDecimals;
 	private String tokenContractAddress;
 	private String tokenContractBinary;
@@ -36,21 +35,6 @@ public class TokenDetailsRegistrationRequest extends BaseApiRequest {
 	 */
 	public void setTokenName(String tokenName) {
 		this.tokenName = tokenName;
-	}
-
-	/**
-	 * @return the tokenSymbol
-	 */
-	public String getTokenSymbol() {
-		return tokenSymbol;
-	}
-
-	/**
-	 * @param tokenSymbol
-	 *            the tokenSymbol to set
-	 */
-	public void setTokenSymbol(String tokenSymbol) {
-		this.tokenSymbol = tokenSymbol;
 	}
 
 	/**

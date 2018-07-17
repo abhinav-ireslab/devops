@@ -13,12 +13,14 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.ireslab.coinclaim.model.TokenDetailsRegistrationRequest;
 import com.ireslab.coinclaim.properties.ApiConfigProperties;
 import com.ireslab.coinclaim.service.CommonService;
 import com.ireslab.coinclaim.service.impl.CoinClaimTokenContractService;
-import com.ireslab.coinclaim.utils.ClientType;
 import com.ireslab.coinclaim.utils.CLMTokenConfig;
+import com.ireslab.coinclaim.utils.ClientType;
 
 /**
  * @author iRESlab
@@ -73,11 +75,11 @@ public class TestController {
 
 		return "" + index;
 	}
-	
+
 	// http://localhost:8180/cc-blockchain-api/test/allocateTokens?beneficiaryAddress=&tokenQuantity=
 	@RequestMapping(value = "/allocateTokens")
 	public TransactionReceipt allocateTokens(@RequestParam(value = "beneficiaryAddress") String beneficiaryAddress,
-			@RequestParam(value = "tokenQuantity") String tokenQuantity) {
+			@RequestParam(value = "tokenQuantity") String tokenQuantity) throws Exception {
 
 		System.out.println("TestController.allocateTokens()");
 		CoinClaimTokenContractService coinClaimContractService = CoinClaimTokenContractService
@@ -117,15 +119,29 @@ public class TestController {
 		return balance;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws JsonProcessingException {
 
-		byte[] privateKey = { (byte) 0x51, (byte) 0xB5, (byte) 0x24, (byte) 0xB8, (byte) 0xD9, (byte) 0x64, (byte) 0x1C,
-				(byte) 0xB5, (byte) 0x9B, (byte) 0x39, (byte) 0xFF, (byte) 0xD6, (byte) 0x13, (byte) 0x09, (byte) 0x59,
-				(byte) 0x9D, (byte) 0x44, (byte) 0x3D, (byte) 0x40, (byte) 0x0F, (byte) 0xB7, (byte) 0x33, (byte) 0xCF,
-				(byte) 0xC7, (byte) 0x2F, (byte) 0xD3, (byte) 0xE0, (byte) 0x43, (byte) 0x0D, (byte) 0x81, (byte) 0xEC,
-				(byte) 0x08 };
+		TokenDetailsRegistrationRequest detailsRegistrationRequest = new TokenDetailsRegistrationRequest();
+
+		detailsRegistrationRequest.setClientCorrelationId("AMMBR");
+		detailsRegistrationRequest.setTokenName("COMPANY1 Token");
+		detailsRegistrationRequest.setTokenSymbol("AMMBR");
+		detailsRegistrationRequest.setTokenDecimals("16");
+		detailsRegistrationRequest.setTokenContractAddress("0xDB95c3E6A85D3D6914fBDd9A72e2e4e45CAd9851");
+		detailsRegistrationRequest.setTokenContractBinary(
+				"[ { \"constant\": true, \"inputs\": [], \"name\": \"name\", \"outputs\": [ { \"name\": \"\", \"type\": \"string\", \"value\": \"\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"constant\": false, \"inputs\": [ { \"name\": \"_spender\", \"type\": \"address\" }, { \"name\": \"_value\", \"type\": \"uint256\" } ], \"name\": \"approve\", \"outputs\": [ { \"name\": \"\", \"type\": \"bool\" } ], \"payable\": false, \"stateMutability\": \"nonpayable\", \"type\": \"function\" }, { \"constant\": true, \"inputs\": [], \"name\": \"totalSupply\", \"outputs\": [ { \"name\": \"\", \"type\": \"uint256\", \"value\": \"2e+25\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"constant\": false, \"inputs\": [ { \"name\": \"_from\", \"type\": \"address\" }, { \"name\": \"_to\", \"type\": \"address\" }, { \"name\": \"_value\", \"type\": \"uint256\" } ], \"name\": \"transferFrom\", \"outputs\": [ { \"name\": \"\", \"type\": \"bool\" } ], \"payable\": false, \"stateMutability\": \"nonpayable\", \"type\": \"function\" }, { \"constant\": true, \"inputs\": [], \"name\": \"decimals\", \"outputs\": [ { \"name\": \"\", \"type\": \"uint8\", \"value\": \"0\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"constant\": true, \"inputs\": [], \"name\": \"cap\", \"outputs\": [ { \"name\": \"\", \"type\": \"uint256\", \"value\": \"2e+25\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"constant\": false, \"inputs\": [ { \"name\": \"_to\", \"type\": \"address\" }, { \"name\": \"_amount\", \"type\": \"uint256\" } ], \"name\": \"mint\", \"outputs\": [ { \"name\": \"\", \"type\": \"bool\" } ], \"payable\": false, \"stateMutability\": \"nonpayable\", \"type\": \"function\" }, { \"constant\": true, \"inputs\": [ { \"name\": \"_owner\", \"type\": \"address\" } ], \"name\": \"balanceOf\", \"outputs\": [ { \"name\": \"balance\", \"type\": \"uint256\", \"value\": \"0\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"constant\": true, \"inputs\": [], \"name\": \"owner\", \"outputs\": [ { \"name\": \"\", \"type\": \"address\", \"value\": \"0x5d1c5b90407ab50e4b428d617d33728467709d7e\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"constant\": true, \"inputs\": [], \"name\": \"symbol\", \"outputs\": [ { \"name\": \"\", \"type\": \"string\", \"value\": \"\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"constant\": true, \"inputs\": [], \"name\": \"maxMintBlock\", \"outputs\": [ { \"name\": \"\", \"type\": \"uint256\", \"value\": \"1\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"constant\": false, \"inputs\": [ { \"name\": \"_to\", \"type\": \"address\" }, { \"name\": \"_value\", \"type\": \"uint256\" } ], \"name\": \"transfer\", \"outputs\": [ { \"name\": \"\", \"type\": \"bool\" } ], \"payable\": false, \"stateMutability\": \"nonpayable\", \"type\": \"function\" }, { \"constant\": true, \"inputs\": [ { \"name\": \"_owner\", \"type\": \"address\" }, { \"name\": \"_spender\", \"type\": \"address\" } ], \"name\": \"allowance\", \"outputs\": [ { \"name\": \"\", \"type\": \"uint256\", \"value\": \"0\" } ], \"payable\": false, \"stateMutability\": \"view\", \"type\": \"function\" }, { \"inputs\": [ { \"name\": \"_name\", \"type\": \"string\", \"index\": 0, \"typeShort\": \"string\", \"bits\": \"\", \"displayName\": \"&thinsp;<span class=\\\"punctuation\\\">_</span>&thinsp;name\", \"template\": \"elements_input_string\", \"value\": \"AmmbrToken\" }, { \"name\": \"_symbol\", \"type\": \"string\", \"index\": 1, \"typeShort\": \"string\", \"bits\": \"\", \"displayName\": \"&thinsp;<span class=\\\"punctuation\\\">_</span>&thinsp;symbol\", \"template\": \"elements_input_string\", \"value\": \"AMR\" }, { \"name\": \"_decimals\", \"type\": \"uint8\", \"index\": 2, \"typeShort\": \"uint\", \"bits\": \"8\", \"displayName\": \"&thinsp;<span class=\\\"punctuation\\\">_</span>&thinsp;decimals\", \"template\": \"elements_input_uint\", \"value\": \"16\" } ], \"payable\": false, \"stateMutability\": \"nonpayable\", \"type\": \"constructor\" }, { \"anonymous\": false, \"inputs\": [ { \"indexed\": true, \"name\": \"to\", \"type\": \"address\" }, { \"indexed\": false, \"name\": \"amount\", \"type\": \"uint256\" } ], \"name\": \"Mint\", \"type\": \"event\" }, { \"anonymous\": false, \"inputs\": [ { \"indexed\": true, \"name\": \"from\", \"type\": \"address\" }, { \"indexed\": true, \"name\": \"to\", \"type\": \"address\" }, { \"indexed\": false, \"name\": \"value\", \"type\": \"uint256\" } ], \"name\": \"Transfer\", \"type\": \"event\" }, { \"anonymous\": false, \"inputs\": [ { \"indexed\": true, \"name\": \"owner\", \"type\": \"address\" }, { \"indexed\": true, \"name\": \"spender\", \"type\": \"address\" }, { \"indexed\": false, \"name\": \"value\", \"type\": \"uint256\" } ], \"name\": \"Approval\", \"type\": \"event\" } ]");
+
+		System.out.println(new ObjectMapper().writeValueAsString(detailsRegistrationRequest));
 
 		/*
+		 * byte[] privateKey = { (byte) 0x51, (byte) 0xB5, (byte) 0x24, (byte) 0xB8,
+		 * (byte) 0xD9, (byte) 0x64, (byte) 0x1C, (byte) 0xB5, (byte) 0x9B, (byte) 0x39,
+		 * (byte) 0xFF, (byte) 0xD6, (byte) 0x13, (byte) 0x09, (byte) 0x59, (byte) 0x9D,
+		 * (byte) 0x44, (byte) 0x3D, (byte) 0x40, (byte) 0x0F, (byte) 0xB7, (byte) 0x33,
+		 * (byte) 0xCF, (byte) 0xC7, (byte) 0x2F, (byte) 0xD3, (byte) 0xE0, (byte) 0x43,
+		 * (byte) 0x0D, (byte) 0x81, (byte) 0xEC, (byte) 0x08 };
+		 * 
+		 * 
 		 * byte[] publicKey = { (byte) 0xe6, (byte) 0xe0, (byte) 0xd5, (byte) 0x45,
 		 * (byte) 0x66, (byte) 0x38, (byte) 0x81, (byte) 0x69, (byte) 0xc4, (byte) 0xde,
 		 * (byte) 0x60, (byte) 0x46, (byte) 0x43, (byte) 0x14, (byte) 0xe8, (byte) 0x7e,
@@ -138,8 +154,8 @@ public class TestController {
 		 * (byte) 0xaf, (byte) 0xaa, (byte) 0x3c, (byte) 0x33, (byte) 0x1b, (byte) 0x2b,
 		 * (byte) 0x40, (byte) 0x35, (byte) 0xa5, (byte) 0xa4, (byte) 0xb7, (byte) 0x5d
 		 * };
-		 */
-		/*
+		 * 
+		 * 
 		 * byte[] msg = { (byte) 0xEC, (byte) 0x80, (byte) 0x85, (byte) 0x09, (byte)
 		 * 0x8B, (byte) 0xCA, (byte) 0x5A, (byte) 0x00, (byte) 0x82, (byte) 0x52, (byte)
 		 * 0x08, (byte) 0x94, (byte) 0x16, (byte) 0x52, (byte) 0xBC, (byte) 0x27, (byte)
@@ -148,41 +164,46 @@ public class TestController {
 		 * 0x44, (byte) 0xB0, (byte) 0x09, (byte) 0x57, (byte) 0x88, (byte) 0x0D, (byte)
 		 * 0xE0, (byte) 0xB6, (byte) 0xB3, (byte) 0xA7, (byte) 0x64, (byte) 0x00, (byte)
 		 * 0x00, (byte) 0x80, (byte) 0x04, (byte) 0x80, (byte) 0x80 };
-		 */
-		/*
+		 * 
+		 * 
 		 * byte[] msgHash = { (byte) 0x6F, (byte) 0xEA, (byte) 0x3F, (byte) 0xB2, (byte)
 		 * 0x4C, (byte) 0x68, (byte) 0xFB, (byte) 0xE8, (byte) 0xB, (byte) 0xBC, (byte)
 		 * 0x5D, (byte) 0xB8, (byte) 0x5E, (byte) 0x1B, (byte) 0x98, (byte) 0x20, (byte)
 		 * 0x2F, (byte) 0x75, (byte) 0x2F, (byte) 0x92, (byte) 0x5A, (byte) 0x1F, (byte)
 		 * 0xF1, (byte) 0xA6, (byte) 0x16, (byte) 0xF, (byte) 0x48, (byte) 0x62, (byte)
 		 * 0xE2, (byte) 0x3B, (byte) 0xB7, (byte) 0x4A };
-		 */
-
-		System.out.println("*********************************** Direct ECDSA **********************************");
-
-		// System.out.println("Msg Hash - " + Hex.toHexString(msgHash));
-		// System.out.println("Private Key (Hex) - " + Hex.toHexString(privateKey));
-		System.out.println("Private Key (Big Integer) - " + new BigInteger(privateKey));
-
-		// ECKeyPair ecKeyPair = new ECKeyPair(new BigInteger(privateKey), new
-		// BigInteger(publicKey));
-		// ECDSASignature ecdsaSignature = ecKeyPair.sign(msgHash);
-
-		// System.out.println("R - " + Hex.toHexString(ecdsaSignature.r.toByteArray()));
-		// System.out.println("S - " + Hex.toHexString(ecdsaSignature.s.toByteArray()));
-
-		System.out
-				.println("\n\n*********************************** Signing + ECDSA **********************************");
-
-		/*
+		 * 
+		 * 
+		 * System.out.
+		 * println("*********************************** Direct ECDSA **********************************"
+		 * );
+		 * 
+		 * // System.out.println("Msg Hash - " + Hex.toHexString(msgHash)); //
+		 * System.out.println("Private Key (Hex) - " + Hex.toHexString(privateKey));
+		 * System.out.println("Private Key (Big Integer) - " + new
+		 * BigInteger(privateKey));
+		 * 
+		 * // ECKeyPair ecKeyPair = new ECKeyPair(new BigInteger(privateKey), new //
+		 * BigInteger(publicKey)); // ECDSASignature ecdsaSignature =
+		 * ecKeyPair.sign(msgHash);
+		 * 
+		 * // System.out.println("R - " +
+		 * Hex.toHexString(ecdsaSignature.r.toByteArray())); //
+		 * System.out.println("S - " + Hex.toHexString(ecdsaSignature.s.toByteArray()));
+		 * 
+		 * System.out
+		 * .println("\n\n*********************************** Signing + ECDSA **********************************"
+		 * );
+		 * 
+		 * 
 		 * SignatureData signatureData = Sign.signMessage(msg, ecKeyPair);
 		 * System.out.println(Hex.toHexString(signatureData.getR()));
 		 * System.out.println(Hex.toHexString(signatureData.getS()));
-		 */
-
-		// SignatureData signatureData2 = Sign.signMessage(msg, ecKeyPair);
-
-		/*
+		 * 
+		 * 
+		 * // SignatureData signatureData2 = Sign.signMessage(msg, ecKeyPair);
+		 * 
+		 * 
 		 * byte[] messageHash = Hash.sha3(msg); System.out.println("Msg Hash - " +
 		 * Hex.toHexString(messageHash)); System.out.println("Private Key (Hex) - " +
 		 * Hex.toHexString(privateKey)); ECDSASignature signatureData =
@@ -190,6 +211,6 @@ public class TestController {
 		 * 
 		 * System.out.println("R - " + Hex.toHexString(signatureData.r.toByteArray()));
 		 * System.out.println("S - " + Hex.toHexString(signatureData.s.toByteArray()));
-		 */
-	}
+		 * 
+		 */}
 }

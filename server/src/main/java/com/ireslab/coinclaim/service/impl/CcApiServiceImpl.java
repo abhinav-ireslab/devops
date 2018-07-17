@@ -101,18 +101,8 @@ public class CcApiServiceImpl implements CcApiService {
 		// Validating Api Request
 		validateBaseApiRequest(generateAddressRequest);
 
-		ClientType clientType = null;
 		String clientCorrelationId = generateAddressRequest.getClientCorrelationId();
-
-		// Check Invalid Client Type
-		try {
-			clientType = ClientType.valueOf(generateAddressRequest.getClientType());
-		} catch (NullPointerException | IllegalArgumentException illExp) {
-			throw new ApiException(HttpStatus.BAD_REQUEST,
-					Arrays.asList(new Error(ResponseCode.INVALID_CLIENT_TYPE.getCode(),
-							"Invalid Client Type sent - " + generateAddressRequest.getClientType())));
-		}
-
+		ClientType clientType = validateClientType(generateAddressRequest.getClientType());
 		/*
 		 * Request received for Company Address Generation
 		 */
@@ -157,7 +147,7 @@ public class CcApiServiceImpl implements CcApiService {
 						+ clientCorrelationId);
 				throw new ApiException(HttpStatus.BAD_REQUEST,
 						Arrays.asList(new Error(ResponseCode.USER_ALREADY_EXISTS.getCode(),
-								"Client already exists with Correlation Id")));
+								"User already exists with Correlation Id")));
 			}
 
 			addressDto = generateAddresses(ClientType.USER);
@@ -180,8 +170,9 @@ public class CcApiServiceImpl implements CcApiService {
 
 		} else {
 			LOG.error("Invalid client type received in request");
-			throw new ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(
-					new Error(ResponseCode.INVALID_CLIENT_TYPE.getCode(), "Invalid client type received in request")));
+			throw new ApiException(HttpStatus.BAD_REQUEST,
+					Arrays.asList(new Error(ResponseCode.INVALID_CLIENT_TYPE.getCode(),
+							"Invalid Client Type'" + clientType + "'received in request")));
 		}
 
 		generateAddressResponse = new GenerateAddressResponse(
@@ -195,162 +186,36 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ireslab.coinclaim.service.CcApiService#retrieveBalance(com.ireslab.
-	 * coinclaim.model.AccountBalanceRequest)
-	 */
-	@Override
-	public AccountBalanceResponse retrieveBalance(AccountBalanceRequest accountBalanceRequest) {
-
-		AccountBalanceResponse accountBalanceResponse = null;
-		List<AccountDetails> accountDetailsList = new ArrayList<>();
-
-		String clientCorrelationId = accountBalanceRequest.getClientCorrelationId();
-
-		// Check Invalid Client Type
-		ClientType clientType = null;
-		try {
-			clientType = ClientType.valueOf(accountBalanceRequest.getClientType());
-		} catch (NullPointerException | IllegalArgumentException illExp) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(
-					new Error(ResponseCode.INVALID_CLIENT_TYPE.getCode(), "Invalid Client Type sent - " + clientType)));
-		}
-
-		// Validating Api Request
-		validateBaseApiRequest(accountBalanceRequest);
-
-		/*
-		 * COMPANY Account Balance Request
-		 */
-		if (clientType.equals(ClientType.COMPANY)) {
-
-			CompanyAccount companyAccount = companyAccountRepo.findByCompanyCorrelationId(clientCorrelationId);
-			if (companyAccount == null || companyAccount.getBtcAddress() == null) {
-
-				LOG.error("Client doesn't exists for ClientCorrelationId - " + clientCorrelationId);
-				throw new ApiException(HttpStatus.BAD_REQUEST,
-						Arrays.asList(new Error(ResponseCode.COMPANY_DOES_NOT_EXISTS.getCode(),
-								"Client doesn't exists for Correlation Id : " + clientCorrelationId)));
-			}
-
-			// BTC Account balance
-			accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), companyAccount.getEthAddress(),
-					retrieveBitcoinBalance(companyAccount.getBtcAddress()).toString()));
-
-			// ETH Account balance
-			accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), companyAccount.getEthAddress(),
-					retrieveEthereumBalance(companyAccount.getEthAddress()).toString()));
-
-			// ERC20 Account balance
-			try {
-				LOG.debug("Getting account balances for ERC20 tokens for address - " + companyAccount.getEthAddress());
-
-				List<CompanyToken> companyTokens = companyAccount.getCompanyTokens();
-				companyTokens.forEach(companyToken -> {
-
-					CLMTokenConfig clmTokenConfig = new CLMTokenConfig();
-					clmTokenConfig.setTokenCode(companyToken.getTokenSymbol());
-					clmTokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
-					clmTokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
-					clmTokenConfig.setTokenDeployerPrivateKey("e");
-
-					CoinClaimTokenContractService tokenContractService = CoinClaimTokenContractService
-							.getContractServiceInstance(web3j, clmTokenConfig);
-
-					accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), companyAccount.getEthAddress(),
-							tokenContractService.retrieveBalance(companyAccount.getEthAddress()).toString())
-									.setTokenCode(companyToken.getTokenSymbol()));
-				});
-
-			} catch (Exception exp) {
-				// TODO: Throw exception
-			}
-		}
-
-		/*
-		 * USER Account Balance Request
-		 */
-		else if (clientType.equals(ClientType.USER)) {
-
-			UserAccount userAccount = userAccountRepo.findByUserCorrelationId(clientCorrelationId);
-
-			if (userAccount != null && userAccount.getBtcAddress() != null) {
-				LOG.error("Invalid correlation id | User already exists with user correlation id - "
-						+ clientCorrelationId);
-				throw new ApiException(HttpStatus.BAD_REQUEST,
-						Arrays.asList(new Error(ResponseCode.USER_ALREADY_EXISTS.getCode(),
-								"Client already exists with Correlation Id")));
-			}
-
-			// BTC Account balance
-			accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), userAccount.getBtcAddress(),
-					retrieveBitcoinBalance(userAccount.getBtcAddress()).toString()));
-
-			// ETH Account balance
-			accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), userAccount.getEthAddress(),
-					retrieveEthereumBalance(userAccount.getEthAddress()).toString()));
-		}
-
-		accountBalanceResponse = new AccountBalanceResponse(accountDetailsList, HttpStatus.OK.value(),
-				ResponseCode.SUCCESS.getCode(), null);
-		accountBalanceResponse.setAccountDetails(accountDetailsList);
-
-		return accountBalanceResponse;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
 	 * @see com.ireslab.coinclaim.service.CcApiService#transferTokens(com.ireslab.
 	 * coinclaim.model.TransferTokensRequest)
 	 */
 	@Override
 	public TokenTransferResponse transferTokens(TokenTransferRequest transferTokensRequest) {
 
+		String successMessage = null;
 		TokenTransferResponse transferTokensResponse = null;
+		List<AccountDetails> accountDetailsList = new ArrayList<>();
 
-		/*
-		 * Validating User Account for given UserCorrelationId
-		 */
-		String userCorrelationId = transferTokensRequest.getUserCorrelationId();
-		if (userCorrelationId == null) {
-			throw new ApiException(HttpStatus.BAD_REQUEST,
-					Arrays.asList(new Error(ResponseCode.MISSING_OR_INVALID_USER_CORRELATION_ID.getCode(),
-							"Missing or Invalid User Correlation Id : " + userCorrelationId)));
-		}
+		TokenType tokenType = validateTokenType(transferTokensRequest.getTokenType());
+		String tokenSymbol = transferTokensRequest.getTokenSymbol();
 
-		UserAccount userAccount = userAccountRepo.findByUserCorrelationId(userCorrelationId);
-		if (userAccount == null || userAccount.getBtcAddress() == null) {
-			LOG.error("User doesn't exists for UserCorrelationId - " + userCorrelationId);
-			throw new ApiException(HttpStatus.BAD_REQUEST,
-					Arrays.asList(new Error(ResponseCode.USER_DOES_NOT_EXISTS.getCode(),
-							"User doesn't exists for User Correlation Id : " + userCorrelationId)));
-		}
+		// Validating User Account for given UserCorrelationId
+		UserAccount userAccount = getUserAccount(transferTokensRequest.getUserCorrelationId());
 
-		/*
-		 * Validate noOfTokens
-		 */
+		// Validate noOfTokens
 		String noOfTokens = transferTokensRequest.getNoOfTokens();
 		if (noOfTokens == null || new BigDecimal(noOfTokens).floatValue() < 0) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(
 					new Error(ResponseCode.INVALID_TOKEN_AMOUNT.getCode(), "Invalid Token Amount : " + noOfTokens)));
 		}
 
-		String tokenType = transferTokensRequest.getTokenType();
-		String tokenCode = transferTokensRequest.getTokenCode();
-
-		// Check for Token Type
-		try {
-			TokenType.valueOf(tokenType);
-		} catch (NullPointerException | IllegalArgumentException illExp) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(
-					new Error(ResponseCode.INVALID_TOKEN_TYPE.getCode(), "Invalid Token Type sent - " + tokenType)));
-		}
-
-		String clientAddress = null;
+		String companyAddress = null;
 		String userAddress = null;
 
-		// CLM TOKEN transfer request (from CoinClaim Master Account to User Account)
-		if (tokenType.equals(TokenType.ERC20.name()) && tokenCode.equalsIgnoreCase(clmTokenConfig.getTokenCode())) {
+		/*
+		 * CLM TOKEN transfer request (from CoinClaim Master Account to User Account)
+		 */
+		if (tokenType.equals(TokenType.ERC20) && tokenSymbol.equalsIgnoreCase(clmTokenConfig.getTokenSymbol())) {
 
 			TransactionReceipt transactionReceipt = null;
 			userAddress = userAccount.getEthAddress();
@@ -358,13 +223,11 @@ public class CcApiServiceImpl implements CcApiService {
 			BigInteger tokenQuantity = new BigDecimal(noOfTokens)
 					.multiply(new BigDecimal(clmTokenConfig.getTokenDecimal())).toBigInteger();
 
-			LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenCode + " CoinClaim's tokens To Address-  "
+			LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenSymbol + "' CoinClaim's tokens To Address-  "
 					+ userAddress);
-
 			try {
 				CoinClaimTokenContractService ccTokenContractService = CoinClaimTokenContractService
 						.getContractServiceInstance(web3j, clmTokenConfig);
-
 				transactionReceipt = ccTokenContractService.allocateTokens(userAddress, tokenQuantity);
 
 				if (transactionReceipt != null) {
@@ -374,50 +237,47 @@ public class CcApiServiceImpl implements CcApiService {
 						throw new Exception("Transaction failed with status - " + transactionReceipt.getStatus());
 					}
 				}
+				successMessage = noOfTokens + " no of '" + tokenSymbol + "' CoinClaim's tokens successfully allocated";
+
 			} catch (Exception exp) {
 				LOG.error("Error occurred while transferring ERC-20 tokens - " + ExceptionUtils.getStackTrace(exp));
-				throw new ApiException("Error occurred while transferring ERC-20 tokens - " + exp);
+				throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+						Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
+								"Error occurred while transferring ERC20 tokens")));
 			}
 		}
 
-		// BTC/ETH/ERC20 TOKEN transfer request (from Company's wallet to User Account)
+		/*
+		 * BTC/ETH/ERC20 TOKEN transfer request (from Company's wallet to User Account)
+		 */
 		else {
-
-			/*
-			 * Validating Client Account for given ClientCorrelationId
-			 */
-			String clientCorrelationId = transferTokensRequest.getClientCorrelationId();
 			validateBaseApiRequest(transferTokensRequest);
 
-			CompanyAccount companyAccount = companyAccountRepo.findByCompanyCorrelationId(clientCorrelationId);
-			if (companyAccount == null || companyAccount.getBtcAddress() == null) {
-				LOG.error("Client doesn't exists for ClientCorrelationId - " + clientCorrelationId);
-				throw new ApiException(HttpStatus.BAD_REQUEST,
-						Arrays.asList(new Error(ResponseCode.COMPANY_DOES_NOT_EXISTS.getCode(),
-								"Client doesn't exists for Correlation Id : " + clientCorrelationId)));
-			}
+			// Validating Client Account for given ClientCorrelationId
+			CompanyAccount companyAccount = getCompanyAccount(transferTokensRequest.getClientCorrelationId());
 
 			TransactionDto transactionDto = new TransactionDto();
 			transactionDto.setIndex(companyAccount.getChildIndex().intValue());
 
-			switch (TokenType.valueOf(tokenType)) {
+			switch (tokenType) {
 			case BTC:
-
-				clientAddress = companyAccount.getBtcAddress();
+				companyAddress = companyAccount.getBtcAddress();
 				userAddress = userAccount.getBtcAddress();
 
 				BigInteger amountInSatoshi = new BigDecimal(noOfTokens).multiply(AppConstants.BTC_DECIMAL_DIV)
 						.toBigInteger();
 
 				transactionDto.setAmount(amountInSatoshi);
-				transactionDto.setFromAddress(clientAddress);
+				transactionDto.setFromAddress(companyAddress);
 				transactionDto.setToAddress(userAddress);
 
 				try {
-					LOG.debug("Initiating transfer of '" + amountInSatoshi + "' satoshis From : '" + clientAddress
+					LOG.debug("Initiating transfer of '" + amountInSatoshi + "' satoshis From : '" + companyAddress
 							+ "' , To : " + userAddress);
 
 					transactionDto = bitcoinTxnService.transferTokens(transactionDto);
+					LOG.debug("Response from node server - " + transactionDto.toString());
+
 					LOG.debug("Bitcoins transferred successfully - " + transactionDto.getTransactionReciept());
 
 				} catch (Exception exp) {
@@ -427,9 +287,11 @@ public class CcApiServiceImpl implements CcApiService {
 
 				try {
 					String balance = String
-							.valueOf(new BigDecimal(bitcoinTxnService.retrieveBalance(clientAddress).getAmount())
+							.valueOf(new BigDecimal(bitcoinTxnService.retrieveBalance(companyAddress).getAmount())
 									.divide(AppConstants.BTC_DECIMAL_DIV).doubleValue());
+
 					LOG.debug("Updated Bitcoin balance for client is  - " + balance);
+					accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), companyAddress, balance));
 
 				} catch (Exception exp) {
 					LOG.error("Error occurred while getting updated balance" + ExceptionUtils.getStackTrace(exp));
@@ -437,19 +299,18 @@ public class CcApiServiceImpl implements CcApiService {
 				break;
 
 			case ETH:
-
-				clientAddress = companyAccount.getEthAddress();
+				companyAddress = companyAccount.getEthAddress();
 				userAddress = userAccount.getEthAddress();
 
 				BigInteger amountInWei = new BigDecimal(noOfTokens).multiply(AppConstants.ETH_DECIMAL_DIV)
 						.toBigInteger();
 
 				transactionDto.setAmount(amountInWei);
-				transactionDto.setFromAddress(clientAddress);
+				transactionDto.setFromAddress(companyAddress);
 				transactionDto.setToAddress(userAddress);
 
 				try {
-					LOG.debug("Initiating transfer of '" + amountInWei + "' wei From : '" + clientAddress + "' , To : "
+					LOG.debug("Initiating transfer of '" + amountInWei + "' wei From : '" + companyAddress + "' , To : "
 							+ userAddress);
 					transactionDto = ethereumTxnService.transferTokens(transactionDto);
 					LOG.debug("Ethers transferred successfully - " + transactionDto.getTransactionReciept());
@@ -461,9 +322,11 @@ public class CcApiServiceImpl implements CcApiService {
 
 				try {
 					String balance = String
-							.valueOf(new BigDecimal(ethereumTxnService.retrieveBalance(clientAddress).getAmount())
+							.valueOf(new BigDecimal(ethereumTxnService.retrieveBalance(companyAddress).getAmount())
 									.divide(AppConstants.ETH_DECIMAL_DIV).doubleValue());
+
 					LOG.debug("Updated Ethereum balance for client is  - " + balance);
+					accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), companyAddress, balance));
 
 				} catch (Exception exp) {
 					LOG.error("Error occurred while getting updated balance" + ExceptionUtils.getStackTrace(exp));
@@ -471,22 +334,22 @@ public class CcApiServiceImpl implements CcApiService {
 				break;
 
 			case ERC20:
-
-				TransactionReceipt transactionReceipt = null;
+				companyAddress = companyAccount.getEthAddress();
+				userAddress = userAccount.getEthAddress();
 
 				CompanyToken companyToken = companyTokenRepo.findByTokenSymbolAndCompanyAccount_CompanyAccountId(
-						tokenCode, companyAccount.getCompanyAccountId());
+						tokenSymbol, companyAccount.getCompanyAccountId());
 
 				if (companyToken == null) {
 					throw new ApiException(HttpStatus.BAD_REQUEST,
 							Arrays.asList(new Error(ResponseCode.TOKEN_DOES_NOT_EXISTS.getCode(),
-									"Token doesn't exists with Token Code : " + tokenCode
-											+ " , for Company with CorrelationId - " + clientCorrelationId)));
+									"Token doesn't exists with Token Code : " + tokenSymbol
+											+ " , for Company with CorrelationId - "
+											+ transferTokensRequest.getClientCorrelationId())));
 				}
 
 				BigInteger tokenQuantity = new BigDecimal(noOfTokens)
 						.multiply(new BigDecimal(companyToken.getTokenDecimals())).toBigInteger();
-				userAddress = userAccount.getEthAddress();
 
 				try {
 					// Getting Company account's Private Key
@@ -494,11 +357,11 @@ public class CcApiServiceImpl implements CcApiService {
 							.derivePrivateKey(companyAccount.getChildIndex(), ClientType.COMPANY)
 							.getEthereumAddressPrivateKey();
 
-					LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenCode + " tokens , To : "
+					LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenSymbol + " tokens , To : "
 							+ userAddress);
 
 					CLMTokenConfig clmTokenConfig = new CLMTokenConfig();
-					clmTokenConfig.setTokenCode(companyToken.getTokenSymbol());
+					clmTokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
 					clmTokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
 					clmTokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
 					clmTokenConfig.setTokenDeployerPrivateKey(privateKey);
@@ -506,7 +369,8 @@ public class CcApiServiceImpl implements CcApiService {
 					CoinClaimTokenContractService ccTokenContractService = CoinClaimTokenContractService
 							.getContractServiceInstance(web3j, clmTokenConfig);
 
-					transactionReceipt = ccTokenContractService.allocateTokens(userAddress, tokenQuantity);
+					TransactionReceipt transactionReceipt = ccTokenContractService.allocateTokens(userAddress,
+							tokenQuantity);
 
 					if (transactionReceipt != null) {
 						LOG.debug("Transaction Receipt - " + objectWriter.writeValueAsString(transactionReceipt));
@@ -515,6 +379,12 @@ public class CcApiServiceImpl implements CcApiService {
 							throw new Exception("Transaction failed with status - " + transactionReceipt.getStatus());
 						}
 					}
+
+					// ERC20 Account Balance
+					accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), companyAddress,
+							ccTokenContractService.retrieveBalance(companyAddress).toString())
+									.setTokenCode(clmTokenConfig.getTokenSymbol()));
+
 				} catch (Exception exp) {
 					LOG.error("Error occurred while transferring ERC-20 tokens - " + ExceptionUtils.getStackTrace(exp));
 					throw new ApiException("Error occurred while transferring ERC-20 tokens - " + exp);
@@ -527,7 +397,8 @@ public class CcApiServiceImpl implements CcApiService {
 		}
 
 		transferTokensResponse = new TokenTransferResponse(HttpStatus.OK.value(), ResponseCode.SUCCESS.getCode(),
-				"Success");
+				successMessage);
+		transferTokensResponse.setAccountDetails(accountDetailsList);
 
 		return transferTokensResponse;
 	}
@@ -551,15 +422,7 @@ public class CcApiServiceImpl implements CcApiService {
 		validateTokenDetails(tokenDetailsRegistrationRequest);
 
 		// Get company details based on correlation id
-		CompanyAccount companyAccount = companyAccountRepo.findByCompanyCorrelationId(clientCorrelationId);
-
-		if (companyAccount == null || companyAccount.getBtcAddress() == null) {
-			LOG.error("Invalid correlation id | Company doesn't exists for client correlation id - "
-					+ clientCorrelationId);
-			throw new ApiException(HttpStatus.BAD_REQUEST,
-					Arrays.asList(new Error(ResponseCode.COMPANY_DOES_NOT_EXISTS.getCode(),
-							"Company doesn't exists with Correlation Id - " + clientCorrelationId)));
-		}
+		CompanyAccount companyAccount = getCompanyAccount(clientCorrelationId);
 
 		Integer tokenDecimal = Integer.parseInt(tokenDetailsRegistrationRequest.getTokenDecimals());
 
@@ -579,10 +442,11 @@ public class CcApiServiceImpl implements CcApiService {
 
 		} catch (DataIntegrityViolationException dexp) {
 			LOG.error("Token with token symbol - '" + tokenDetailsRegistrationRequest.getTokenSymbol()
-					+ "' already exists for client");
+					+ "' already exists for client with correlationId - " + clientCorrelationId);
 			throw new ApiException(HttpStatus.BAD_REQUEST,
-					Arrays.asList(new Error(ResponseCode.TOKEN_ALREADY_EXISTS.getCode(), "Token with token symbol - '"
-							+ tokenDetailsRegistrationRequest.getTokenSymbol() + "' already exits for client")));
+					Arrays.asList(new Error(ResponseCode.TOKEN_ALREADY_EXISTS.getCode(),
+							"Token with token symbol '" + tokenDetailsRegistrationRequest.getTokenSymbol()
+									+ "' already exits for Client Correlation Id - " + clientCorrelationId)));
 
 		} catch (Exception exp) {
 			LOG.error("Error occurred while persisting company token details in database");
@@ -590,24 +454,175 @@ public class CcApiServiceImpl implements CcApiService {
 		}
 
 		tokenDetailsRegistrationResponse = new TokenDetailsRegistrationResponse(HttpStatus.OK.value(),
-				ResponseCode.SUCCESS.getCode(), "Token Details Successfully saved");
+				ResponseCode.SUCCESS.getCode(), "Token Details for token '"
+						+ tokenDetailsRegistrationRequest.getTokenSymbol() + "' successfully saved");
 
 		return tokenDetailsRegistrationResponse;
 	}
 
-	/**
-	 * @param tokenDetailsRegistrationRequest
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ireslab.coinclaim.service.CcApiService#retrieveBalance(com.ireslab.
+	 * coinclaim.model.AccountBalanceRequest)
 	 */
-	private void validateTokenDetails(TokenDetailsRegistrationRequest tokenDetailsRegistrationRequest) {
+	@Override
+	public AccountBalanceResponse retrieveBalance(AccountBalanceRequest accountBalanceRequest) {
 
-		if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenCode())
-				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
-				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals())
-				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress())
-				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractBinary())) {
+		final String ethereumAddress;
+		AccountBalanceResponse accountBalanceResponse = null;
+
+		List<Error> errors = new ArrayList<>();
+		List<AccountDetails> accountDetailsList = new ArrayList<>();
+
+		String clientCorrelationId = accountBalanceRequest.getClientCorrelationId();
+
+		// Check Invalid Client Type
+		ClientType clientType = null;
+		try {
+			clientType = ClientType.valueOf(accountBalanceRequest.getClientType());
+		} catch (NullPointerException | IllegalArgumentException illExp) {
 			throw new ApiException(HttpStatus.BAD_REQUEST,
-					Arrays.asList(new Error(ResponseCode.INVALID_CLIENT_TYPE.getCode(), "Invalid Token Details")));
+					Arrays.asList(new Error(ResponseCode.INVALID_CLIENT_TYPE.getCode(),
+							"Invalid Client Type'" + clientType + "'received in request")));
 		}
+
+		// Validating Api Request
+		validateBaseApiRequest(accountBalanceRequest);
+
+		/*
+		 * COMPANY Account Balance Request
+		 */
+		if (clientType.equals(ClientType.COMPANY)) {
+
+			CompanyAccount companyAccount = getCompanyAccount(clientCorrelationId);
+			ethereumAddress = companyAccount.getEthAddress();
+
+			// BTC Account balance
+			accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), companyAccount.getBtcAddress(),
+					retrieveBitcoinBalance(companyAccount.getBtcAddress()).toString()));
+
+			// ETH Account balance
+			accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), ethereumAddress,
+					retrieveEthereumBalance(ethereumAddress).toString()));
+
+			// ERC20 Account balance
+			LOG.debug("Getting account balances for ERC20 tokens for address - " + ethereumAddress);
+
+			List<CompanyToken> companyTokens = companyAccount.getCompanyTokens();
+			companyTokens.forEach(companyToken -> {
+
+				CLMTokenConfig clmTokenConfig = new CLMTokenConfig();
+				clmTokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
+				clmTokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
+				clmTokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
+				clmTokenConfig.setTokenDeployerPrivateKey("e");
+
+				CoinClaimTokenContractService tokenContractService = CoinClaimTokenContractService
+						.getContractServiceInstance(web3j, clmTokenConfig);
+
+				String balance = String.valueOf(new BigDecimal(tokenContractService.retrieveBalance(ethereumAddress))
+						.divide(new BigDecimal(companyToken.getTokenDecimals())).doubleValue());
+
+				accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress, balance.toString())
+						.setTokenCode(companyToken.getTokenSymbol()));
+			});
+		}
+
+		/*
+		 * USER Account Balance Request
+		 */
+		else if (clientType.equals(ClientType.USER)) {
+			UserAccount userAccount = getUserAccount(clientCorrelationId);
+
+			ethereumAddress = userAccount.getEthAddress();
+
+			// BTC Account balance
+			accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), userAccount.getBtcAddress(),
+					retrieveBitcoinBalance(userAccount.getBtcAddress()).toString()));
+
+			// ETH Account balance
+			accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), ethereumAddress,
+					retrieveEthereumBalance(ethereumAddress).toString()));
+
+			try {
+				// ERC20-CLM Account balance
+				CoinClaimTokenContractService clmContractService = CoinClaimTokenContractService
+						.getContractServiceInstance(web3j, clmTokenConfig);
+
+				BigInteger tokenBalance = clmContractService.retrieveBalance(ethereumAddress)
+						.divide(new BigInteger(clmTokenConfig.getTokenDecimal()));
+
+				accountDetailsList
+						.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress, tokenBalance.toString())
+								.setTokenCode(clmTokenConfig.getTokenSymbol()));
+
+			} catch (Exception exp) {
+				LOG.error("Failed to get '" + clmTokenConfig.getTokenSymbol() + "' token balance - "
+						+ ExceptionUtils.getStackTrace(exp));
+				errors.add(new Error(ResponseCode.FAILED_RETRIEVING_ERC20_TOKEN_BALANCE.getCode(),
+						"Failed to get '" + clmTokenConfig.getTokenSymbol() + "' token balance"));
+			}
+
+			// ERC-20 Account Balance
+			companyTokenRepo.findAll().forEach(companyToken -> {
+
+				CLMTokenConfig clmTokenConfig = new CLMTokenConfig();
+				clmTokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
+				clmTokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
+				clmTokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
+				clmTokenConfig.setTokenDeployerPrivateKey("e");
+
+				CoinClaimTokenContractService tokenContractService = CoinClaimTokenContractService
+						.getContractServiceInstance(web3j, clmTokenConfig);
+
+				String balance = String.valueOf(new BigDecimal(tokenContractService.retrieveBalance(ethereumAddress))
+						.divide(new BigDecimal(companyToken.getTokenDecimals())).doubleValue());
+
+				accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress, balance.toString())
+						.setTokenCode(companyToken.getTokenSymbol()));
+			});
+		}
+
+		accountBalanceResponse = new AccountBalanceResponse(accountDetailsList, HttpStatus.OK.value(),
+				ResponseCode.SUCCESS.getCode(), errors);
+		accountBalanceResponse.setAccountDetails(accountDetailsList);
+
+		return accountBalanceResponse;
+	}
+
+	/**
+	 * @param clientType
+	 * @return
+	 */
+	private ClientType validateClientType(String clientType) {
+
+		ClientType clientTypeEnum = null;
+		try {
+			clientTypeEnum = ClientType.valueOf(clientType);
+		} catch (NullPointerException | IllegalArgumentException illExp) {
+			throw new ApiException(HttpStatus.BAD_REQUEST,
+					Arrays.asList(new Error(ResponseCode.INVALID_CLIENT_TYPE.getCode(),
+							"Invalid Client Type'" + clientType + "'received in request")));
+		}
+		return clientTypeEnum;
+	}
+
+	/**
+	 * @param tokenType
+	 * @return
+	 */
+	private TokenType validateTokenType(String tokenType) {
+
+		TokenType tokenTypeEnum = null;
+
+		try {
+			tokenTypeEnum = TokenType.valueOf(tokenType);
+		} catch (NullPointerException | IllegalArgumentException illExp) {
+			throw new ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(
+					new Error(ResponseCode.INVALID_TOKEN_TYPE.getCode(), "Invalid Token Type sent - " + tokenType)));
+		}
+		return tokenTypeEnum;
 	}
 
 	/**
@@ -625,7 +640,7 @@ public class CcApiServiceImpl implements CcApiService {
 		// Call node service
 		try {
 			addressDto = bitcoinTxnService.generateAddress(childIndex, clientType);
-			LOG.debug("Unique generated addresses:\n" + "\t Bitcoin (BTC) Address generated - "
+			LOG.debug("Unique generated addresses for " + clientType + ":\n" + "\t Bitcoin (BTC) Address generated - "
 					+ addressDto.getUniqueBitcoinAddress() + "\n\t Unique Ethereum (ETH) Address generated - "
 					+ addressDto.getUniqueEthereumAddress());
 
@@ -678,6 +693,57 @@ public class CcApiServiceImpl implements CcApiService {
 			LOG.error("Error occurred while retrieving balance");
 			throw new ApiException("Error occurred while retrieving balance", exp);
 		}
+	}
+
+	/**
+	 * @param tokenDetailsRegistrationRequest
+	 */
+	private void validateTokenDetails(TokenDetailsRegistrationRequest tokenDetailsRegistrationRequest) {
+
+		if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
+				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
+				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals())
+				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress())
+				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractBinary())) {
+			throw new ApiException(HttpStatus.BAD_REQUEST,
+					Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(), "Invalid Token Details")));
+		}
+	}
+
+	/**
+	 * @param userCorrelationId
+	 * @return
+	 */
+	private UserAccount getUserAccount(String userCorrelationId) {
+
+		UserAccount userAccount = userAccountRepo.findByUserCorrelationId(userCorrelationId);
+
+		if (userAccount == null || userAccount.getBtcAddress() == null) {
+			LOG.error("Invalid correlation id | User doesn't exists with Correlation Id - " + userCorrelationId);
+			throw new ApiException(HttpStatus.BAD_REQUEST,
+					Arrays.asList(new Error(ResponseCode.USER_DOES_NOT_EXISTS.getCode(),
+							"User doesn't exists for Correlation Id -" + userCorrelationId)));
+		}
+
+		return userAccount;
+	}
+
+	/**
+	 * @param clientCorrelationId
+	 * @return
+	 */
+	private CompanyAccount getCompanyAccount(String clientCorrelationId) {
+
+		CompanyAccount companyAccount = companyAccountRepo.findByCompanyCorrelationId(clientCorrelationId);
+
+		if (companyAccount == null || companyAccount.getBtcAddress() == null) {
+			LOG.error("Company doesn't exists for ClientCorrelationId - " + clientCorrelationId);
+			throw new ApiException(HttpStatus.BAD_REQUEST,
+					Arrays.asList(new Error(ResponseCode.COMPANY_DOES_NOT_EXISTS.getCode(),
+							"Company doesn't exists for Correlation Id : " + clientCorrelationId)));
+		}
+
+		return companyAccount;
 	}
 
 	/**

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties
 public class CLMTokenConfig {
 
-	private String tokenCode;
+	private String tokenSymbol;
 	private String tokenDecimal;
 
 	private String tokenContractAddress;
@@ -23,16 +23,16 @@ public class CLMTokenConfig {
 	/**
 	 * @return the tokenCode
 	 */
-	public String getTokenCode() {
-		return tokenCode;
+	public String getTokenSymbol() {
+		return tokenSymbol;
 	}
 
 	/**
-	 * @param tokenCode
+	 * @param tokenSymbol
 	 *            the tokenCode to set
 	 */
-	public void setTokenCode(String tokenCode) {
-		this.tokenCode = tokenCode;
+	public void setTokenSymbol(String tokenSymbol) {
+		this.tokenSymbol = tokenSymbol;
 	}
 
 	/**

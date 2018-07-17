@@ -67,10 +67,22 @@ public class EthereumTransactionServiceImpl implements BlockchainTransactionServ
 		return bitcoinTxnService.generateAddress(index, clientType);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.ireslab.coinclaim.service.BlockchainTransactionService#transferTokens(com
+	 * .ireslab.coinclaim.dto.TransactionDto)
+	 */
 	@Override
 	public TransactionDto transferTokens(TransactionDto transactionDto) {
-		// TODO Auto-generated method stub
-		return null;
+
+		LOG.debug("Calling node server to transfer ethers. . . .");
+
+		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getEthTransferEndpoint();
+		transactionDto = restTemplate.postForObject(url, transactionDto, TransactionDto.class);
+
+		return transactionDto;
 	}
 
 	/**
@@ -81,6 +93,6 @@ public class EthereumTransactionServiceImpl implements BlockchainTransactionServ
 	@Override
 	public AddressDto derivePrivateKey(BigInteger index, ClientType clientType) {
 
-		return bitcoinTxnService.generateAddress(index, clientType);
+		return bitcoinTxnService.derivePrivateKey(index, clientType);
 	}
 }
