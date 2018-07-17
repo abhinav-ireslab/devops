@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @PropertySource(value = "classpath:clm_token_config.properties")
 @ConfigurationProperties
-public class CLMTokenConfig {
+public class TokenConfig {
 
 	private String tokenSymbol;
 	private String tokenDecimal;

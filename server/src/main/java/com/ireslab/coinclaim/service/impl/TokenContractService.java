@@ -17,18 +17,15 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 
-import com.ireslab.coinclaim.utils.CLMTokenConfig;
+import com.ireslab.coinclaim.utils.TokenConfig;
 
 /**
  * @author iRESlab
  *
  */
-public class CoinClaimTokenContractService extends Contract {
+public class TokenContractService extends Contract {
 
-	private static final Logger LOG = LoggerFactory.getLogger(CoinClaimTokenContractService.class);
-
-	private static CoinClaimTokenContractService ccTokenContractService = null;
-	private static Object whileCreatingObject = new Object();
+	private static final Logger LOG = LoggerFactory.getLogger(TokenContractService.class);
 
 	private static final String TOKEN_ALLOCATION_CONTRACT_METHOD = "transfer";
 	private static final String BALANCE_CHECK_METHOD = "balanceOf";
@@ -41,7 +38,7 @@ public class CoinClaimTokenContractService extends Contract {
 	 * @param gasPrice
 	 * @param gasLimit
 	 */
-	protected CoinClaimTokenContractService(String contractBinary, String contractAddress, Web3j web3j,
+	protected TokenContractService(String contractBinary, String contractAddress, Web3j web3j,
 			Credentials credentials) {
 		super(contractBinary, contractAddress, web3j, credentials, Contract.GAS_PRICE, Contract.GAS_LIMIT);
 	}
@@ -51,15 +48,15 @@ public class CoinClaimTokenContractService extends Contract {
 	 * @param tokenConfig
 	 * @return
 	 */
-	public static CoinClaimTokenContractService getContractServiceInstance(Web3j web3j, CLMTokenConfig tokenConfig) {
+	public static TokenContractService getContractServiceInstance(Web3j web3j, TokenConfig tokenConfig) {
 
-		if (ccTokenContractService == null) {
+		TokenContractService ccTokenContractService;
+		String tokenContractAddress = new String(tokenConfig.getTokenContractAddress()).intern();
 
-			synchronized (whileCreatingObject) {
-				ccTokenContractService = new CoinClaimTokenContractService(tokenConfig.getTokenContractBinary(),
-						tokenConfig.getTokenContractAddress(), web3j,
-						Credentials.create(tokenConfig.getTokenDeployerPrivateKey()));
-			}
+		synchronized (tokenContractAddress) {
+			ccTokenContractService = new TokenContractService(tokenConfig.getTokenContractBinary(),
+					tokenConfig.getTokenContractAddress(), web3j,
+					Credentials.create(tokenConfig.getTokenDeployerPrivateKey()));
 		}
 
 		return ccTokenContractService;
@@ -112,7 +109,7 @@ public class CoinClaimTokenContractService extends Contract {
 
 		try {
 			balance = (BigInteger) executeCallSingleValueReturn(tokenAllocationFunction).getValue();
-			LOG.debug("Balance - " + balance);
+			LOG.debug("Account Balance - " + balance);
 			return balance;
 
 		} catch (Exception exp) {

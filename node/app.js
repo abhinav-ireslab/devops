@@ -177,7 +177,9 @@ app.post('/check_eth_balance', function(req, res) {
     
     console.log('POST REQUEST TO CHECK ETH BALANCE FOR ADDRESS - ' + fromAddress);
     web3.eth.getBalance(fromAddress, function(error, balance) {
-    	console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'))
+
+    	//console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'));
+    	console.log('ETH Balance - ' + balance);
 
         var result = {
             fromAddress: fromAddress,

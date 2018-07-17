@@ -43,7 +43,7 @@ import com.ireslab.coinclaim.service.BlockchainTransactionService;
 import com.ireslab.coinclaim.service.CcApiService;
 import com.ireslab.coinclaim.service.CommonService;
 import com.ireslab.coinclaim.utils.AppConstants;
-import com.ireslab.coinclaim.utils.CLMTokenConfig;
+import com.ireslab.coinclaim.utils.TokenConfig;
 import com.ireslab.coinclaim.utils.ClientType;
 import com.ireslab.coinclaim.utils.ResponseCode;
 import com.ireslab.coinclaim.utils.TokenType;
@@ -67,7 +67,7 @@ public class CcApiServiceImpl implements CcApiService {
 	private CommonService commonService;
 
 	@Autowired
-	private CLMTokenConfig clmTokenConfig;
+	private TokenConfig clmTokenConfig;
 
 	@Autowired
 	private CompanyTokenRepo companyTokenRepo;
@@ -194,6 +194,8 @@ public class CcApiServiceImpl implements CcApiService {
 
 		String successMessage = null;
 		TokenTransferResponse transferTokensResponse = null;
+
+		List<Error> errors = new ArrayList<>();
 		List<AccountDetails> accountDetailsList = new ArrayList<>();
 
 		TokenType tokenType = validateTokenType(transferTokensRequest.getTokenType());
@@ -212,7 +214,7 @@ public class CcApiServiceImpl implements CcApiService {
 		String companyAddress = null;
 		String userAddress = null;
 
-		/*
+		/**
 		 * CLM TOKEN transfer request (from CoinClaim Master Account to User Account)
 		 */
 		if (tokenType.equals(TokenType.ERC20) && tokenSymbol.equalsIgnoreCase(clmTokenConfig.getTokenSymbol())) {
@@ -220,15 +222,16 @@ public class CcApiServiceImpl implements CcApiService {
 			TransactionReceipt transactionReceipt = null;
 			userAddress = userAccount.getEthAddress();
 
-			BigInteger tokenQuantity = new BigDecimal(noOfTokens)
-					.multiply(new BigDecimal(clmTokenConfig.getTokenDecimal())).toBigInteger();
-
 			LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenSymbol + "' CoinClaim's tokens To Address-  "
 					+ userAddress);
 			try {
-				CoinClaimTokenContractService ccTokenContractService = CoinClaimTokenContractService
-						.getContractServiceInstance(web3j, clmTokenConfig);
-				transactionReceipt = ccTokenContractService.allocateTokens(userAddress, tokenQuantity);
+				TokenContractService clmTokenContractService = TokenContractService.getContractServiceInstance(web3j,
+						clmTokenConfig);
+
+				BigInteger clmTokenQuantity = new BigDecimal(noOfTokens)
+						.multiply(new BigDecimal(clmTokenConfig.getTokenDecimal())).toBigInteger();
+
+				transactionReceipt = clmTokenContractService.allocateTokens(userAddress, clmTokenQuantity);
 
 				if (transactionReceipt != null) {
 					LOG.debug("Transaction Receipt - " + objectWriter.writeValueAsString(transactionReceipt));
@@ -237,13 +240,30 @@ public class CcApiServiceImpl implements CcApiService {
 						throw new Exception("Transaction failed with status - " + transactionReceipt.getStatus());
 					}
 				}
+
+				// Retrieving updated CLM Token Balance
+				try {
+					BigInteger clmTokenBalance = clmTokenContractService.retrieveBalance(userAddress)
+							.divide(new BigInteger(clmTokenConfig.getTokenDecimal()));
+
+					accountDetailsList
+							.add(new AccountDetails(TokenType.ERC20.name(), userAddress, clmTokenBalance.toString())
+									.setTokenCode(tokenSymbol));
+
+				} catch (Exception exp) {
+					LOG.error(
+							"Failed to get '" + tokenSymbol + "' token balance - " + ExceptionUtils.getStackTrace(exp));
+					errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
+							"Failed to get '" + tokenSymbol + "' token balance"));
+				}
+
 				successMessage = noOfTokens + " no of '" + tokenSymbol + "' CoinClaim's tokens successfully allocated";
 
 			} catch (Exception exp) {
 				LOG.error("Error occurred while transferring ERC-20 tokens - " + ExceptionUtils.getStackTrace(exp));
 				throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
 						Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
-								"Error occurred while transferring ERC20 tokens")));
+								"Error occurred while transferring ERC20 tokens - " + tokenSymbol)));
 			}
 		}
 
@@ -277,24 +297,26 @@ public class CcApiServiceImpl implements CcApiService {
 
 					transactionDto = bitcoinTxnService.transferTokens(transactionDto);
 					LOG.debug("Response from node server - " + transactionDto.toString());
-
 					LOG.debug("Bitcoins transferred successfully - " + transactionDto.getTransactionReciept());
 
+					successMessage = noOfTokens + " Bitcoins (BTC) successfully transferred";
+
 				} catch (Exception exp) {
-					LOG.error("Error occurred while transferring bitcoins");
-					throw new ApiException("Error occurred while transferring bitcoins", exp);
+					LOG.error("Error occurred while transferring bitcoins - " + ExceptionUtils.getStackTrace(exp));
+					throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+							Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
+									"Error occurred while transferring bitcoins")));
 				}
 
+				// Getting updated BTC balance
 				try {
-					String balance = String
-							.valueOf(new BigDecimal(bitcoinTxnService.retrieveBalance(companyAddress).getAmount())
-									.divide(AppConstants.BTC_DECIMAL_DIV).doubleValue());
-
-					LOG.debug("Updated Bitcoin balance for client is  - " + balance);
-					accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), companyAddress, balance));
+					accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), companyAddress,
+							retrieveBitcoinBalance(companyAddress).toString()));
 
 				} catch (Exception exp) {
-					LOG.error("Error occurred while getting updated balance" + ExceptionUtils.getStackTrace(exp));
+					LOG.error("Failed to get BTC balance - " + ExceptionUtils.getStackTrace(exp));
+					errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
+							"Failed to get BTC balance"));
 				}
 				break;
 
@@ -315,21 +337,22 @@ public class CcApiServiceImpl implements CcApiService {
 					transactionDto = ethereumTxnService.transferTokens(transactionDto);
 					LOG.debug("Ethers transferred successfully - " + transactionDto.getTransactionReciept());
 
+					successMessage = noOfTokens + " Ethers (ETH) successfully transferred";
+
 				} catch (Exception exp) {
 					LOG.error("Error occurred while transferring ethers");
 					throw new ApiException("Error occurred while transferring ethers", exp);
 				}
 
+				// Getting updated ETH balance
 				try {
-					String balance = String
-							.valueOf(new BigDecimal(ethereumTxnService.retrieveBalance(companyAddress).getAmount())
-									.divide(AppConstants.ETH_DECIMAL_DIV).doubleValue());
-
-					LOG.debug("Updated Ethereum balance for client is  - " + balance);
-					accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), companyAddress, balance));
+					accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), companyAddress,
+							retrieveEthereumBalance(companyAddress).toString()));
 
 				} catch (Exception exp) {
-					LOG.error("Error occurred while getting updated balance" + ExceptionUtils.getStackTrace(exp));
+					LOG.error("Failed to get ETH balance - " + ExceptionUtils.getStackTrace(exp));
+					errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
+							"Failed to get ETH balance"));
 				}
 				break;
 
@@ -360,14 +383,15 @@ public class CcApiServiceImpl implements CcApiService {
 					LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenSymbol + " tokens , To : "
 							+ userAddress);
 
-					CLMTokenConfig clmTokenConfig = new CLMTokenConfig();
-					clmTokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
-					clmTokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
-					clmTokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
-					clmTokenConfig.setTokenDeployerPrivateKey(privateKey);
+					TokenConfig erc20TokenConfig = new TokenConfig();
+					erc20TokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
+					erc20TokenConfig.setTokenDecimal(companyToken.getTokenDecimals().toString());
+					erc20TokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
+					erc20TokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
+					erc20TokenConfig.setTokenDeployerPrivateKey(privateKey);
 
-					CoinClaimTokenContractService ccTokenContractService = CoinClaimTokenContractService
-							.getContractServiceInstance(web3j, clmTokenConfig);
+					TokenContractService ccTokenContractService = TokenContractService.getContractServiceInstance(web3j,
+							erc20TokenConfig);
 
 					TransactionReceipt transactionReceipt = ccTokenContractService.allocateTokens(userAddress,
 							tokenQuantity);
@@ -380,19 +404,28 @@ public class CcApiServiceImpl implements CcApiService {
 						}
 					}
 
+					successMessage = noOfTokens + " no of '" + tokenSymbol + "' tokens successfully transferred";
+
+					String erc20TokenBalance = String
+							.valueOf(new BigDecimal(ccTokenContractService.retrieveBalance(companyAddress))
+									.divide(new BigDecimal(erc20TokenConfig.getTokenDecimal())).doubleValue());
+
 					// ERC20 Account Balance
-					accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), companyAddress,
-							ccTokenContractService.retrieveBalance(companyAddress).toString())
-									.setTokenCode(clmTokenConfig.getTokenSymbol()));
+					accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), companyAddress, erc20TokenBalance)
+							.setTokenCode(erc20TokenConfig.getTokenSymbol()));
 
 				} catch (Exception exp) {
 					LOG.error("Error occurred while transferring ERC-20 tokens - " + ExceptionUtils.getStackTrace(exp));
-					throw new ApiException("Error occurred while transferring ERC-20 tokens - " + exp);
+					throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+							Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
+									"Error occurred while transferring ERC20 tokens - " + tokenSymbol)));
 				}
 				break;
 
 			default:
-				break;
+				throw new ApiException(HttpStatus.BAD_REQUEST,
+						Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_TYPE.getCode(),
+								"Invalid Token Type received in request")));
 			}
 		}
 
@@ -499,12 +532,26 @@ public class CcApiServiceImpl implements CcApiService {
 			ethereumAddress = companyAccount.getEthAddress();
 
 			// BTC Account balance
-			accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), companyAccount.getBtcAddress(),
-					retrieveBitcoinBalance(companyAccount.getBtcAddress()).toString()));
+			try {
+				accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), companyAccount.getBtcAddress(),
+						retrieveBitcoinBalance(companyAccount.getBtcAddress()).toString()));
+
+			} catch (Exception exp) {
+				LOG.error("Failed to get BTC balance - " + ExceptionUtils.getStackTrace(exp));
+				errors.add(
+						new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(), "Failed to get BTC balance"));
+			}
 
 			// ETH Account balance
-			accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), ethereumAddress,
-					retrieveEthereumBalance(ethereumAddress).toString()));
+			try {
+				accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), ethereumAddress,
+						retrieveEthereumBalance(ethereumAddress).toString()));
+
+			} catch (Exception exp) {
+				LOG.error("Failed to get ETH balance - " + ExceptionUtils.getStackTrace(exp));
+				errors.add(
+						new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(), "Failed to get ETH balance"));
+			}
 
 			// ERC20 Account balance
 			LOG.debug("Getting account balances for ERC20 tokens for address - " + ethereumAddress);
@@ -512,20 +559,25 @@ public class CcApiServiceImpl implements CcApiService {
 			List<CompanyToken> companyTokens = companyAccount.getCompanyTokens();
 			companyTokens.forEach(companyToken -> {
 
-				CLMTokenConfig clmTokenConfig = new CLMTokenConfig();
-				clmTokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
-				clmTokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
-				clmTokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
-				clmTokenConfig.setTokenDeployerPrivateKey("e");
+				TokenConfig erc20TokenConfig = null;
 
-				CoinClaimTokenContractService tokenContractService = CoinClaimTokenContractService
-						.getContractServiceInstance(web3j, clmTokenConfig);
+				try {
+					erc20TokenConfig = new TokenConfig();
+					erc20TokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
+					erc20TokenConfig.setTokenDecimal(companyToken.getTokenDecimals().toString());
+					erc20TokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
+					erc20TokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
+					erc20TokenConfig.setTokenDeployerPrivateKey("e");
 
-				String balance = String.valueOf(new BigDecimal(tokenContractService.retrieveBalance(ethereumAddress))
-						.divide(new BigDecimal(companyToken.getTokenDecimals())).doubleValue());
-
-				accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress, balance.toString())
-						.setTokenCode(companyToken.getTokenSymbol()));
+					accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress,
+							retrieveERC20Balance(ethereumAddress, erc20TokenConfig))
+									.setTokenCode(companyToken.getTokenSymbol()));
+				} catch (Exception exp) {
+					LOG.error("Failed to get '" + erc20TokenConfig.getTokenSymbol() + "' token balance - "
+							+ ExceptionUtils.getStackTrace(exp));
+					errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
+							"Failed to get '" + erc20TokenConfig.getTokenSymbol() + "' token balance"));
+				}
 			});
 		}
 
@@ -533,54 +585,64 @@ public class CcApiServiceImpl implements CcApiService {
 		 * USER Account Balance Request
 		 */
 		else if (clientType.equals(ClientType.USER)) {
-			UserAccount userAccount = getUserAccount(clientCorrelationId);
 
+			UserAccount userAccount = getUserAccount(clientCorrelationId);
 			ethereumAddress = userAccount.getEthAddress();
 
 			// BTC Account balance
-			accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), userAccount.getBtcAddress(),
-					retrieveBitcoinBalance(userAccount.getBtcAddress()).toString()));
+			try {
+				accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), userAccount.getBtcAddress(),
+						retrieveBitcoinBalance(userAccount.getBtcAddress()).toString()));
+			} catch (Exception exp) {
+				LOG.error("Failed to get BTC balance - " + ExceptionUtils.getStackTrace(exp));
+				errors.add(
+						new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(), "Failed to get BTC balance"));
+			}
 
 			// ETH Account balance
-			accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), ethereumAddress,
-					retrieveEthereumBalance(ethereumAddress).toString()));
-
 			try {
-				// ERC20-CLM Account balance
-				CoinClaimTokenContractService clmContractService = CoinClaimTokenContractService
-						.getContractServiceInstance(web3j, clmTokenConfig);
+				accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), ethereumAddress,
+						retrieveEthereumBalance(ethereumAddress).toString()));
+			} catch (Exception exp) {
+				LOG.error("Failed to get ETH balance - " + ExceptionUtils.getStackTrace(exp));
+				errors.add(
+						new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(), "Failed to get ETH balance"));
+			}
 
-				BigInteger tokenBalance = clmContractService.retrieveBalance(ethereumAddress)
-						.divide(new BigInteger(clmTokenConfig.getTokenDecimal()));
-
-				accountDetailsList
-						.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress, tokenBalance.toString())
+			// ERC20-CLM Account balance
+			try {
+				accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress,
+						retrieveERC20Balance(ethereumAddress, clmTokenConfig))
 								.setTokenCode(clmTokenConfig.getTokenSymbol()));
 
 			} catch (Exception exp) {
 				LOG.error("Failed to get '" + clmTokenConfig.getTokenSymbol() + "' token balance - "
 						+ ExceptionUtils.getStackTrace(exp));
-				errors.add(new Error(ResponseCode.FAILED_RETRIEVING_ERC20_TOKEN_BALANCE.getCode(),
+				errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
 						"Failed to get '" + clmTokenConfig.getTokenSymbol() + "' token balance"));
 			}
 
 			// ERC-20 Account Balance
-			companyTokenRepo.findAll().forEach(companyToken -> {
+			companyTokenRepo.findAll().forEach(erc20CompanyToken -> {
 
-				CLMTokenConfig clmTokenConfig = new CLMTokenConfig();
-				clmTokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
-				clmTokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
-				clmTokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
-				clmTokenConfig.setTokenDeployerPrivateKey("e");
+				TokenConfig erc20TokenConfig = new TokenConfig();
+				erc20TokenConfig.setTokenSymbol(erc20CompanyToken.getTokenSymbol());
+				erc20TokenConfig.setTokenDecimal(erc20CompanyToken.getTokenDecimals().toString());
+				erc20TokenConfig.setTokenContractAddress(erc20CompanyToken.getTokenContractAddress());
+				erc20TokenConfig.setTokenContractBinary(erc20CompanyToken.getTokenContractBinary());
+				erc20TokenConfig.setTokenDeployerPrivateKey("e");
 
-				CoinClaimTokenContractService tokenContractService = CoinClaimTokenContractService
-						.getContractServiceInstance(web3j, clmTokenConfig);
+				try {
+					accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress,
+							retrieveERC20Balance(ethereumAddress, erc20TokenConfig).toString())
+									.setTokenCode(erc20CompanyToken.getTokenSymbol()));
 
-				String balance = String.valueOf(new BigDecimal(tokenContractService.retrieveBalance(ethereumAddress))
-						.divide(new BigDecimal(companyToken.getTokenDecimals())).doubleValue());
-
-				accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), ethereumAddress, balance.toString())
-						.setTokenCode(companyToken.getTokenSymbol()));
+				} catch (Exception exp) {
+					LOG.error("Failed to get '" + erc20TokenConfig.getTokenSymbol() + "' token balance - "
+							+ ExceptionUtils.getStackTrace(exp));
+					errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
+							"Failed to get '" + erc20TokenConfig.getTokenSymbol() + "' token balance"));
+				}
 			});
 		}
 
@@ -651,6 +713,22 @@ public class CcApiServiceImpl implements CcApiService {
 			throw new ApiException("Error occurred while generating address", exp);
 		}
 		return addressDto;
+	}
+
+	/**
+	 * @param ethAddress
+	 * @param erc20TokenConfig
+	 * @return
+	 */
+	private String retrieveERC20Balance(String ethAddress, TokenConfig erc20TokenConfig) {
+
+		TokenContractService erc20TokenContractService = TokenContractService.getContractServiceInstance(web3j,
+				erc20TokenConfig);
+
+		String erc20TokenBalance = String.valueOf(new BigDecimal(erc20TokenContractService.retrieveBalance(ethAddress))
+				.divide(new BigDecimal(erc20TokenConfig.getTokenDecimal())).doubleValue());
+
+		return erc20TokenBalance;
 	}
 
 	/**

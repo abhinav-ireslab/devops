@@ -18,8 +18,8 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.ireslab.coinclaim.model.TokenDetailsRegistrationRequest;
 import com.ireslab.coinclaim.properties.ApiConfigProperties;
 import com.ireslab.coinclaim.service.CommonService;
-import com.ireslab.coinclaim.service.impl.CoinClaimTokenContractService;
-import com.ireslab.coinclaim.utils.CLMTokenConfig;
+import com.ireslab.coinclaim.service.impl.TokenContractService;
+import com.ireslab.coinclaim.utils.TokenConfig;
 import com.ireslab.coinclaim.utils.ClientType;
 
 /**
@@ -39,7 +39,7 @@ public class TestController {
 	private Web3j web3j;
 
 	@Autowired
-	private CLMTokenConfig tokenConfig;
+	private TokenConfig tokenConfig;
 
 	@Autowired
 	private ObjectWriter writer;
@@ -82,7 +82,7 @@ public class TestController {
 			@RequestParam(value = "tokenQuantity") String tokenQuantity) throws Exception {
 
 		System.out.println("TestController.allocateTokens()");
-		CoinClaimTokenContractService coinClaimContractService = CoinClaimTokenContractService
+		TokenContractService coinClaimContractService = TokenContractService
 				.getContractServiceInstance(web3j, tokenConfig);
 
 		BigInteger totalQuantity = new BigInteger(tokenQuantity)
@@ -110,7 +110,7 @@ public class TestController {
 
 		System.out.println("TestController.tokenBalance()");
 
-		CoinClaimTokenContractService claimTokenContractService = CoinClaimTokenContractService
+		TokenContractService claimTokenContractService = TokenContractService
 				.getContractServiceInstance(web3j, tokenConfig);
 
 		BigInteger balance = claimTokenContractService.retrieveBalance(beneficiaryAddress);

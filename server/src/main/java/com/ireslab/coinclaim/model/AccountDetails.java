@@ -4,17 +4,21 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+/**
+ * @author iRESlab
+ *
+ */
 @JsonInclude(value = Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AccountDetails {
 
-	private String tokenType;
-
 	private String address;
 
-	private String balance;
+	private String tokenType;
 
 	private String tokenCode;
+
+	private String balance;
 
 	/**
 	 * @param tokenType
@@ -43,21 +47,6 @@ public class AccountDetails {
 	}
 
 	/**
-	 * @return the type
-	 */
-	public String getTokenType() {
-		return tokenType;
-	}
-
-	/**
-	 * @param tokenType
-	 *            the type to set
-	 */
-	public void setTokenType(String tokenType) {
-		this.tokenType = tokenType;
-	}
-
-	/**
 	 * @return the address
 	 */
 	public String getAddress() {
@@ -73,18 +62,18 @@ public class AccountDetails {
 	}
 
 	/**
-	 * @return the balance
+	 * @return the type
 	 */
-	public String getBalance() {
-		return balance;
+	public String getTokenType() {
+		return tokenType;
 	}
 
 	/**
-	 * @param balance
-	 *            the balance to set
+	 * @param tokenType
+	 *            the type to set
 	 */
-	public void setBalance(String balance) {
-		this.balance = balance;
+	public void setTokenType(String tokenType) {
+		this.tokenType = tokenType;
 	}
 
 	/**
@@ -102,4 +91,20 @@ public class AccountDetails {
 		this.tokenCode = tokenCode;
 		return this;
 	}
+
+	/**
+	 * @return the balance
+	 */
+	public String getBalance() {
+		return balance;
+	}
+
+	/**
+	 * @param balance
+	 *            the balance to set
+	 */
+	public void setBalance(String balance) {
+		this.balance = balance;
+	}
+
 }
