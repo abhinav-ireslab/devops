@@ -17,4 +17,10 @@ public interface CompanyTokenRepo extends CrudRepository<CompanyToken, Integer> 
 	 */
 	public CompanyToken findByTokenSymbolAndCompanyAccount_CompanyAccountId(String tokenSymbol,
 			Integer companyAccountId);
+	
+	/**
+	 * @param tokenSymbol
+	 * @return
+	 */
+	public CompanyToken findByTokenSymbol(String tokenSymbol);
 }

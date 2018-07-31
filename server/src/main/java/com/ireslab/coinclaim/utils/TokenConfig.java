@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @PropertySource(value = "classpath:clm_token_config.properties")
 @ConfigurationProperties
-public class TokenConfig {
+public class TokenConfig implements Cloneable {
 
 	private String tokenSymbol;
 	private String tokenDecimal;
@@ -93,5 +93,15 @@ public class TokenConfig {
 	 */
 	public void setTokenDeployerPrivateKey(String tokenDeployerPrivateKey) {
 		this.tokenDeployerPrivateKey = tokenDeployerPrivateKey;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#clone()
+	 */
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
 	}
 }

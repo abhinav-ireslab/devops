@@ -12,6 +12,8 @@ public class TransactionDto extends NodeResponse {
 	private Integer index;
 	private String toAddress;
 	private BigInteger amount;
+
+	private String clientType;
 	private String transactionReciept;
 
 	/**
@@ -72,6 +74,21 @@ public class TransactionDto extends NodeResponse {
 	 */
 	public void setAmount(BigInteger amount) {
 		this.amount = amount;
+	}
+
+	/**
+	 * @return the clientType
+	 */
+	public String getClientType() {
+		return clientType;
+	}
+
+	/**
+	 * @param clientType
+	 *            the clientType to set
+	 */
+	public void setClientType(String clientType) {
+		this.clientType = clientType;
 	}
 
 	/**

@@ -43,9 +43,9 @@ import com.ireslab.coinclaim.service.BlockchainTransactionService;
 import com.ireslab.coinclaim.service.CcApiService;
 import com.ireslab.coinclaim.service.CommonService;
 import com.ireslab.coinclaim.utils.AppConstants;
-import com.ireslab.coinclaim.utils.TokenConfig;
 import com.ireslab.coinclaim.utils.ClientType;
 import com.ireslab.coinclaim.utils.ResponseCode;
+import com.ireslab.coinclaim.utils.TokenConfig;
 import com.ireslab.coinclaim.utils.TokenType;
 
 /**
@@ -192,17 +192,14 @@ public class CcApiServiceImpl implements CcApiService {
 	@Override
 	public TokenTransferResponse transferTokens(TokenTransferRequest transferTokensRequest) {
 
-		String successMessage = null;
 		TokenTransferResponse transferTokensResponse = null;
 
-		List<Error> errors = new ArrayList<>();
-		List<AccountDetails> accountDetailsList = new ArrayList<>();
+		String companyCorrelationId = transferTokensRequest.getClientCorrelationId();
+		String userCorrelationId = transferTokensRequest.getUserCorrelationId();
+		String beneficiaryAddress = transferTokensRequest.getBeneficiaryAddress();
 
 		TokenType tokenType = validateTokenType(transferTokensRequest.getTokenType());
 		String tokenSymbol = transferTokensRequest.getTokenSymbol();
-
-		// Validating User Account for given UserCorrelationId
-		UserAccount userAccount = getUserAccount(transferTokensRequest.getUserCorrelationId());
 
 		// Validate noOfTokens
 		String noOfTokens = transferTokensRequest.getNoOfTokens();
@@ -211,227 +208,172 @@ public class CcApiServiceImpl implements CcApiService {
 					new Error(ResponseCode.INVALID_TOKEN_AMOUNT.getCode(), "Invalid Token Amount : " + noOfTokens)));
 		}
 
-		String companyAddress = null;
-		String userAddress = null;
+		UserAccount userAccount = null;
+		TokenConfig tokenConfig = null;
+
+		String senderAddress = null;
+		String receiverAddress = null;
 
 		/**
-		 * CLM TOKEN transfer request (from CoinClaim Master Account to User Account)
+		 * Company to User Account/Beneficiary address (BTC/ETH/ERC20)
 		 */
-		if (tokenType.equals(TokenType.ERC20) && tokenSymbol.equalsIgnoreCase(clmTokenConfig.getTokenSymbol())) {
+		if (companyCorrelationId != null) {
 
-			TransactionReceipt transactionReceipt = null;
-			userAddress = userAccount.getEthAddress();
-
-			LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenSymbol + "' CoinClaim's tokens To Address-  "
-					+ userAddress);
-			try {
-				TokenContractService clmTokenContractService = TokenContractService.getContractServiceInstance(web3j,
-						clmTokenConfig);
-
-				BigInteger clmTokenQuantity = new BigDecimal(noOfTokens)
-						.multiply(new BigDecimal(clmTokenConfig.getTokenDecimal())).toBigInteger();
-
-				transactionReceipt = clmTokenContractService.allocateTokens(userAddress, clmTokenQuantity);
-
-				if (transactionReceipt != null) {
-					LOG.debug("Transaction Receipt - " + objectWriter.writeValueAsString(transactionReceipt));
-
-					if (!transactionReceipt.getStatus().equalsIgnoreCase(AppConstants.TRANSACTION_STATUS_SUCCESS)) {
-						throw new Exception("Transaction failed with status - " + transactionReceipt.getStatus());
-					}
-				}
-
-				// Retrieving updated CLM Token Balance
-				try {
-					BigInteger clmTokenBalance = clmTokenContractService.retrieveBalance(userAddress)
-							.divide(new BigInteger(clmTokenConfig.getTokenDecimal()));
-
-					accountDetailsList
-							.add(new AccountDetails(TokenType.ERC20.name(), userAddress, clmTokenBalance.toString())
-									.setTokenCode(tokenSymbol));
-
-				} catch (Exception exp) {
-					LOG.error(
-							"Failed to get '" + tokenSymbol + "' token balance - " + ExceptionUtils.getStackTrace(exp));
-					errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
-							"Failed to get '" + tokenSymbol + "' token balance"));
-				}
-
-				successMessage = noOfTokens + " no of '" + tokenSymbol + "' CoinClaim's tokens successfully allocated";
-
-			} catch (Exception exp) {
-				LOG.error("Error occurred while transferring ERC-20 tokens - " + ExceptionUtils.getStackTrace(exp));
-				throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-						Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
-								"Error occurred while transferring ERC20 tokens - " + tokenSymbol)));
-			}
-		}
-
-		/*
-		 * BTC/ETH/ERC20 TOKEN transfer request (from Company's wallet to User Account)
-		 */
-		else {
 			validateBaseApiRequest(transferTokensRequest);
-
-			// Validating Client Account for given ClientCorrelationId
 			CompanyAccount companyAccount = getCompanyAccount(transferTokensRequest.getClientCorrelationId());
 
-			TransactionDto transactionDto = new TransactionDto();
-			transactionDto.setIndex(companyAccount.getChildIndex().intValue());
+			// Transfer from COMPANY Account to USER Account
+			if (userCorrelationId != null) {
+				userAccount = getUserAccount(transferTokensRequest.getUserCorrelationId());
+			}
+
+			// Transfer from COMPANY Account to USER Address
+			else if (userCorrelationId == null && beneficiaryAddress != null) {
+				userAccount = new UserAccount();
+				userAccount.setBtcAddress(beneficiaryAddress);
+				userAccount.setEthAddress(beneficiaryAddress);
+
+			} else {
+				throw new ApiException(HttpStatus.BAD_REQUEST,
+						Arrays.asList(new Error(ResponseCode.INVALID_REQUEST.getCode(), "Invalid Request")));
+			}
 
 			switch (tokenType) {
 			case BTC:
-				companyAddress = companyAccount.getBtcAddress();
-				userAddress = userAccount.getBtcAddress();
-
-				BigInteger amountInSatoshi = new BigDecimal(noOfTokens).multiply(AppConstants.BTC_DECIMAL_DIV)
-						.toBigInteger();
-
-				transactionDto.setAmount(amountInSatoshi);
-				transactionDto.setFromAddress(companyAddress);
-				transactionDto.setToAddress(userAddress);
-
-				try {
-					LOG.debug("Initiating transfer of '" + amountInSatoshi + "' satoshis From : '" + companyAddress
-							+ "' , To : " + userAddress);
-
-					transactionDto = bitcoinTxnService.transferTokens(transactionDto);
-					LOG.debug("Response from node server - " + transactionDto.toString());
-					LOG.debug("Bitcoins transferred successfully - " + transactionDto.getTransactionReciept());
-
-					successMessage = noOfTokens + " Bitcoins (BTC) successfully transferred";
-
-				} catch (Exception exp) {
-					LOG.error("Error occurred while transferring bitcoins - " + ExceptionUtils.getStackTrace(exp));
-					throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-							Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
-									"Error occurred while transferring bitcoins")));
-				}
-
-				// Getting updated BTC balance
-				try {
-					accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), companyAddress,
-							retrieveBitcoinBalance(companyAddress).toString()));
-
-				} catch (Exception exp) {
-					LOG.error("Failed to get BTC balance - " + ExceptionUtils.getStackTrace(exp));
-					errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
-							"Failed to get BTC balance"));
-				}
+				senderAddress = companyAccount.getBtcAddress();
+				receiverAddress = userAccount.getBtcAddress();
 				break;
 
 			case ETH:
-				companyAddress = companyAccount.getEthAddress();
-				userAddress = userAccount.getEthAddress();
-
-				BigInteger amountInWei = new BigDecimal(noOfTokens).multiply(AppConstants.ETH_DECIMAL_DIV)
-						.toBigInteger();
-
-				transactionDto.setAmount(amountInWei);
-				transactionDto.setFromAddress(companyAddress);
-				transactionDto.setToAddress(userAddress);
-
-				try {
-					LOG.debug("Initiating transfer of '" + amountInWei + "' wei From : '" + companyAddress + "' , To : "
-							+ userAddress);
-					transactionDto = ethereumTxnService.transferTokens(transactionDto);
-					LOG.debug("Ethers transferred successfully - " + transactionDto.getTransactionReciept());
-
-					successMessage = noOfTokens + " Ethers (ETH) successfully transferred";
-
-				} catch (Exception exp) {
-					LOG.error("Error occurred while transferring ethers");
-					throw new ApiException("Error occurred while transferring ethers", exp);
-				}
-
-				// Getting updated ETH balance
-				try {
-					accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), companyAddress,
-							retrieveEthereumBalance(companyAddress).toString()));
-
-				} catch (Exception exp) {
-					LOG.error("Failed to get ETH balance - " + ExceptionUtils.getStackTrace(exp));
-					errors.add(new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(),
-							"Failed to get ETH balance"));
-				}
+				senderAddress = companyAccount.getEthAddress();
+				receiverAddress = userAccount.getEthAddress();
 				break;
 
 			case ERC20:
-				companyAddress = companyAccount.getEthAddress();
-				userAddress = userAccount.getEthAddress();
+				senderAddress = companyAccount.getEthAddress();
+				receiverAddress = userAccount.getEthAddress();
 
 				CompanyToken companyToken = companyTokenRepo.findByTokenSymbolAndCompanyAccount_CompanyAccountId(
 						tokenSymbol, companyAccount.getCompanyAccountId());
 
 				if (companyToken == null) {
+					LOG.error("Invalid Token Symbol | Token '" + tokenSymbol
+							+ " 'doesn't exists for Company with Correlation Id - " + companyCorrelationId);
 					throw new ApiException(HttpStatus.BAD_REQUEST,
 							Arrays.asList(new Error(ResponseCode.TOKEN_DOES_NOT_EXISTS.getCode(),
-									"Token doesn't exists with Token Code : " + tokenSymbol
-											+ " , for Company with CorrelationId - "
-											+ transferTokensRequest.getClientCorrelationId())));
+									"Token '" + tokenSymbol + " 'doesn't exists for Company with Correlation Id - "
+											+ companyCorrelationId)));
 				}
 
-				BigInteger tokenQuantity = new BigDecimal(noOfTokens)
-						.multiply(new BigDecimal(companyToken.getTokenDecimals())).toBigInteger();
+				// Getting Company's or user's account Private Key
+				String privateKey = ethereumTxnService
+						.derivePrivateKey(companyAccount.getChildIndex(), ClientType.COMPANY)
+						.getEthereumAddressPrivateKey();
 
-				try {
-					// Getting Company account's Private Key
-					String privateKey = ethereumTxnService
-							.derivePrivateKey(companyAccount.getChildIndex(), ClientType.COMPANY)
-							.getEthereumAddressPrivateKey();
-
-					LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenSymbol + " tokens , To : "
-							+ userAddress);
-
-					TokenConfig erc20TokenConfig = new TokenConfig();
-					erc20TokenConfig.setTokenSymbol(companyToken.getTokenSymbol());
-					erc20TokenConfig.setTokenDecimal(companyToken.getTokenDecimals().toString());
-					erc20TokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
-					erc20TokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
-					erc20TokenConfig.setTokenDeployerPrivateKey(privateKey);
-
-					TokenContractService ccTokenContractService = TokenContractService.getContractServiceInstance(web3j,
-							erc20TokenConfig);
-
-					TransactionReceipt transactionReceipt = ccTokenContractService.allocateTokens(userAddress,
-							tokenQuantity);
-
-					if (transactionReceipt != null) {
-						LOG.debug("Transaction Receipt - " + objectWriter.writeValueAsString(transactionReceipt));
-
-						if (!transactionReceipt.getStatus().equalsIgnoreCase(AppConstants.TRANSACTION_STATUS_SUCCESS)) {
-							throw new Exception("Transaction failed with status - " + transactionReceipt.getStatus());
-						}
-					}
-
-					successMessage = noOfTokens + " no of '" + tokenSymbol + "' tokens successfully transferred";
-
-					String erc20TokenBalance = String
-							.valueOf(new BigDecimal(ccTokenContractService.retrieveBalance(companyAddress))
-									.divide(new BigDecimal(erc20TokenConfig.getTokenDecimal())).doubleValue());
-
-					// ERC20 Account Balance
-					accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), companyAddress, erc20TokenBalance)
-							.setTokenCode(erc20TokenConfig.getTokenSymbol()));
-
-				} catch (Exception exp) {
-					LOG.error("Error occurred while transferring ERC-20 tokens - " + ExceptionUtils.getStackTrace(exp));
-					throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-							Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
-									"Error occurred while transferring ERC20 tokens - " + tokenSymbol)));
-				}
+				tokenConfig = new TokenConfig();
+				tokenConfig.setTokenSymbol(tokenSymbol);
+				tokenConfig.setTokenDeployerPrivateKey(privateKey);
+				tokenConfig.setTokenDecimal(companyToken.getTokenDecimals().toString());
+				tokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
+				tokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
 				break;
 
 			default:
-				throw new ApiException(HttpStatus.BAD_REQUEST,
-						Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_TYPE.getCode(),
-								"Invalid Token Type received in request")));
+				break;
 			}
+
+			transferTokensRequest.setClientType(ClientType.COMPANY.name());
+			transferTokensRequest.setSenderAddress(senderAddress);
+			transferTokensRequest.setSenderAddressIndex(companyAccount.getChildIndex());
+			transferTokensRequest.setBeneficiaryAddress(receiverAddress);
+
+			transferTokensResponse = transferTokens(transferTokensRequest, tokenConfig);
 		}
 
-		transferTokensResponse = new TokenTransferResponse(HttpStatus.OK.value(), ResponseCode.SUCCESS.getCode(),
-				successMessage);
-		transferTokensResponse.setAccountDetails(accountDetailsList);
+		/**
+		 * Transfer from either
+		 * 
+		 * - User Account to User Address (BTC/ETH/ERC20/CLM)
+		 * 
+		 * - CLM account to User Account (CLM)
+		 */
+		else {
+
+			// User Account to User Address (BTC/ETH/ERC20/CLM)
+			if (userCorrelationId != null && beneficiaryAddress != null) {
+				userAccount = getUserAccount(transferTokensRequest.getUserCorrelationId());
+				receiverAddress = beneficiaryAddress;
+				tokenConfig = new TokenConfig();
+
+				switch (tokenType) {
+				case BTC:
+					senderAddress = userAccount.getBtcAddress();
+					break;
+
+				case ETH:
+					senderAddress = userAccount.getEthAddress();
+					break;
+
+				case ERC20:
+					senderAddress = userAccount.getEthAddress();
+
+					// Not CLM
+					if (!tokenSymbol.equalsIgnoreCase(clmTokenConfig.getTokenSymbol())) {
+
+						CompanyToken companyToken = companyTokenRepo.findByTokenSymbol(tokenSymbol);
+						
+						if (companyToken == null) {
+							LOG.error("Invalid Token Symbol | Token '" + tokenSymbol + " 'doesn't exists");
+							throw new ApiException(HttpStatus.BAD_REQUEST,
+									Arrays.asList(new Error(ResponseCode.TOKEN_DOES_NOT_EXISTS.getCode(),
+											"Token '" + tokenSymbol + " 'doesn't exists")));
+						}
+						tokenConfig.setTokenSymbol(tokenSymbol);
+						tokenConfig.setTokenDecimal(companyToken.getTokenDecimals().toString());
+						tokenConfig.setTokenContractBinary(companyToken.getTokenContractBinary());
+						tokenConfig.setTokenContractAddress(companyToken.getTokenContractAddress());
+					}
+
+					// CLM
+					else {
+						try {
+							tokenConfig = (TokenConfig) clmTokenConfig.clone();
+						} catch (CloneNotSupportedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+
+				// Getting Company's or user's account Private Key
+				String privateKey = ethereumTxnService.derivePrivateKey(userAccount.getChildIndex(), ClientType.USER)
+						.getEthereumAddressPrivateKey();
+				tokenConfig.setTokenDeployerPrivateKey(privateKey);
+
+				transferTokensRequest.setSenderAddress(senderAddress);
+				transferTokensRequest.setSenderAddressIndex(userAccount.getChildIndex());
+
+			} else if (userCorrelationId != null && beneficiaryAddress == null
+					&& tokenSymbol.equalsIgnoreCase(clmTokenConfig.getTokenSymbol())) {
+
+				userAccount = getUserAccount(transferTokensRequest.getUserCorrelationId());
+				receiverAddress = userAccount.getEthAddress();
+
+				// CLM to User Address (CLM)
+				try {
+					tokenConfig = (TokenConfig) clmTokenConfig.clone();
+				} catch (CloneNotSupportedException e) {
+					e.printStackTrace();
+				}
+
+			} else {
+				throw new ApiException(HttpStatus.BAD_REQUEST,
+						Arrays.asList(new Error(ResponseCode.INVALID_REQUEST.getCode(), "Invalid Request")));
+			}
+
+			transferTokensRequest.setClientType(ClientType.USER.name());
+			transferTokensRequest.setBeneficiaryAddress(receiverAddress);
+			transferTokensResponse = transferTokens(transferTokensRequest, tokenConfig);
+		}
 
 		return transferTokensResponse;
 	}
@@ -651,6 +593,175 @@ public class CcApiServiceImpl implements CcApiService {
 		accountBalanceResponse.setAccountDetails(accountDetailsList);
 
 		return accountBalanceResponse;
+	}
+
+	/**
+	 * @param tokenTransferRequest
+	 * @param tokenConfig
+	 * @return
+	 */
+	private TokenTransferResponse transferTokens(TokenTransferRequest tokenTransferRequest, TokenConfig tokenConfig) {
+
+		String successMessage = null;
+		TokenTransferResponse tokenTransferResponse = null;
+
+		String noOfTokens = tokenTransferRequest.getNoOfTokens();
+		String senderAccountAddress = tokenTransferRequest.getSenderAddress();
+		String receiverAccountAddress = tokenTransferRequest.getBeneficiaryAddress();
+		String tokenSymbol = tokenTransferRequest.getTokenSymbol();
+
+		List<Error> errors = new ArrayList<>();
+		List<AccountDetails> accountDetailsList = new ArrayList<>();
+
+		TransactionDto transactionDto = new TransactionDto();
+		transactionDto.setClientType(tokenTransferRequest.getClientType());
+
+		switch (TokenType.valueOf(tokenTransferRequest.getTokenType())) {
+		case BTC:
+			BigInteger amountInSatoshi = new BigDecimal(noOfTokens).multiply(AppConstants.BTC_DECIMAL_DIV)
+					.toBigInteger();
+
+			transactionDto.setIndex(tokenTransferRequest.getSenderAddressIndex().intValue());
+			transactionDto.setAmount(amountInSatoshi);
+			transactionDto.setFromAddress(senderAccountAddress);
+			transactionDto.setToAddress(receiverAccountAddress);
+
+			try {
+				LOG.debug("Initiating transfer of '" + amountInSatoshi + "' satoshis From : '" + senderAccountAddress
+						+ "' , To : " + receiverAccountAddress);
+
+				transactionDto = bitcoinTxnService.transferTokens(transactionDto);
+				LOG.debug("Response from node server - " + transactionDto.toString());
+				LOG.debug("Bitcoins transferred successfully - " + transactionDto.getTransactionReciept());
+
+				successMessage = noOfTokens + " Bitcoins (BTC) successfully transferred";
+
+			} catch (Exception exp) {
+				LOG.error("Error occurred while transferring bitcoins - " + ExceptionUtils.getStackTrace(exp));
+				throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+						Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
+								"Error occurred while transferring bitcoins")));
+			}
+
+			// Getting updated BTC balance
+			try {
+				accountDetailsList.add(new AccountDetails(TokenType.BTC.name(), senderAccountAddress,
+						retrieveBitcoinBalance(senderAccountAddress).toString()));
+
+			} catch (Exception exp) {
+				LOG.error("Failed to get BTC balance - " + ExceptionUtils.getStackTrace(exp));
+				errors.add(
+						new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(), "Failed to get BTC balance"));
+			}
+			break;
+
+		case ETH:
+			BigInteger amountInWei = new BigDecimal(noOfTokens).multiply(AppConstants.ETH_DECIMAL_DIV).toBigInteger();
+
+			transactionDto.setIndex(tokenTransferRequest.getSenderAddressIndex().intValue());
+
+			transactionDto.setAmount(amountInWei);
+			transactionDto.setFromAddress(senderAccountAddress);
+			transactionDto.setToAddress(receiverAccountAddress);
+
+			try {
+				LOG.debug("Initiating transfer of '" + amountInWei + "' wei From : '" + senderAccountAddress
+						+ "' , To : " + receiverAccountAddress);
+				transactionDto = ethereumTxnService.transferTokens(transactionDto);
+
+				if (transactionDto.getErrorCode() != null) {
+					LOG.error("Result Code - " + transactionDto.getResultCode() + " | Description - "
+							+ transactionDto.getDescription() + " | Error Code - " + transactionDto.getErrorCode());
+					throw new ApiException("Result Code - " + transactionDto.getResultCode() + " | Description - "
+							+ transactionDto.getDescription() + " | Error Code - " + transactionDto.getErrorCode());
+				}
+
+				LOG.debug("Ethers transferred successfully - " + transactionDto.getTransactionReciept());
+
+				successMessage = noOfTokens + " Ethers (ETH) successfully transferred";
+
+			} catch (Exception exp) {
+				LOG.error("Error occurred while transferring ethers");
+				throw new ApiException("Error occurred while transferring ethers", exp);
+			}
+
+			// Getting updated ETH balance
+			try {
+				accountDetailsList.add(new AccountDetails(TokenType.ETH.name(), senderAccountAddress,
+						retrieveEthereumBalance(senderAccountAddress).toString()));
+
+			} catch (Exception exp) {
+				LOG.error("Failed to get ETH balance - " + ExceptionUtils.getStackTrace(exp));
+				errors.add(
+						new Error(ResponseCode.FAILED_RETRIEVING_TOKEN_BALANCE.getCode(), "Failed to get ETH balance"));
+			}
+			break;
+
+		case ERC20:
+			BigInteger tokenQuantity = new BigDecimal(noOfTokens)
+					.multiply(new BigDecimal(tokenConfig.getTokenDecimal())).toBigInteger();
+
+			boolean isCoinClaimTokenTransfer = tokenConfig.getTokenSymbol()
+					.equalsIgnoreCase(clmTokenConfig.getTokenSymbol());
+
+			try {
+				LOG.debug("Initiating transfer of " + noOfTokens + " '" + tokenSymbol + "' tokens , To Address : "
+						+ receiverAccountAddress);
+
+				// if (!isCoinClaimTokenTransfer) {
+				// // Getting Company's or user's account Private Key
+				// String privateKey = ethereumTxnService
+				// .derivePrivateKey(tokenTransferRequest.getSenderAddressIndex(),
+				// ClientType.valueOf(tokenTransferRequest.getClientType()))
+				// .getEthereumAddressPrivateKey();
+				//
+				// tokenConfig.setTokenDeployerPrivateKey(privateKey);
+				// }
+
+				TokenContractService tokenContractService = TokenContractService.getContractServiceInstance(web3j,
+						tokenConfig);
+
+				TransactionReceipt transactionReceipt = tokenContractService.allocateTokens(receiverAccountAddress,
+						tokenQuantity);
+
+				if (transactionReceipt != null) {
+					LOG.debug("Transaction Receipt - " + objectWriter.writeValueAsString(transactionReceipt));
+
+					if (!transactionReceipt.getStatus().equalsIgnoreCase(AppConstants.TRANSACTION_STATUS_SUCCESS)) {
+						throw new Exception("Transaction failed with status - " + transactionReceipt.getStatus());
+					}
+				}
+
+				successMessage = noOfTokens + " no of '" + tokenSymbol + "' tokens successfully transferred";
+
+				// Not CLM
+				if (!isCoinClaimTokenTransfer) {
+
+					// ERC20 Account Balance
+					accountDetailsList.add(new AccountDetails(TokenType.ERC20.name(), senderAccountAddress,
+							String.valueOf(new BigDecimal(tokenContractService.retrieveBalance(senderAccountAddress))
+									.divide(new BigDecimal(tokenConfig.getTokenDecimal())).doubleValue()))
+											.setTokenCode(tokenConfig.getTokenSymbol()));
+				}
+
+			} catch (Exception exp) {
+				LOG.error("Error occurred while transferring ERC-20 tokens - " + ExceptionUtils.getStackTrace(exp));
+				throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+						Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
+								"Error occurred while transferring ERC20 tokens - " + tokenSymbol)));
+			}
+			break;
+
+		default:
+			throw new ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(
+					new Error(ResponseCode.INVALID_TOKEN_TYPE.getCode(), "Invalid Token Type received in request")));
+		}
+
+		tokenTransferResponse = new TokenTransferResponse(HttpStatus.OK.value(), ResponseCode.SUCCESS.getCode(),
+				successMessage, errors);
+		tokenTransferResponse.setAccountDetails(accountDetailsList);
+
+		return tokenTransferResponse;
 	}
 
 	/**

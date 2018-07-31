@@ -25,14 +25,14 @@ const parseJson = require('parse-json');
 app.use(bodyParser.json());
 
 app.get('/', function(req, res) {
-    res.send("Great News server is up .........");
+    res.send("CoinClaim Node Server is up and running......");
 })
 
 var server = app.listen(8081, function() {
     var host = server.address().address
     var port = server.address().port
 
-    console.log("Example app listening at http://%s:%s", host, port)
+    console.log("CoinClaim Node Server listening at http://%s:%s", host, port)
 });
 
 function getCompanyAccountsRootKey() {
@@ -105,7 +105,6 @@ app
             	hdpriv = getCompanyAccountsRootKey();
             	
             }else if(clientType == "USER"){
-            	
             	console.log('GENERATING ADDRESSES FOR USER');
             	hdpriv = getUserAccountsRootKey();
             }
@@ -178,7 +177,7 @@ app.post('/check_eth_balance', function(req, res) {
     console.log('POST REQUEST TO CHECK ETH BALANCE FOR ADDRESS - ' + fromAddress);
     web3.eth.getBalance(fromAddress, function(error, balance) {
 
-    	//console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'));
+    	// console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'));
     	console.log('ETH Balance - ' + balance);
 
         var result = {
@@ -198,15 +197,7 @@ app.post('/check_token_balance', function(req, res){
 	var tokenAddress = body.tokenAddress;
 	
 	console.log('POST REQUEST TO CHECK TOKEN BALANCE FOR ADDRESS - ' + beneficiaryAddress);
-	
 	console.log('Web3.sha3("balanceOf(address)") - ' + web3.utils.sha3("balanceOf(address)"));
-	
-// var tokenContract = web3.eth.contract("").at(contractAddress)
-// var decimal = tokenContract.decimals()
-// var balance = tokenContract.balanceOf(address)
-// var adjustedBalance = balance / Math.pow(10, decimal)
-// var tokenName = tokenContract.name()
-// var tokenSymbol = tokenContract.symbol()
 	
 	web3.eth.getBalance(beneficiaryAddress, function(error, balance) {
 
@@ -219,13 +210,6 @@ app.post('/check_token_balance', function(req, res){
         
         res.end(JSON.stringify(result));
     });
-	
-// var result = {
-// beneficiaryAddress: beneficiaryAddress,
-// balance: balance
-// }
-// res.end(JSON.stringify(result));
-	
 });
 
 
@@ -292,6 +276,8 @@ app
             var index = body.index;
             var value = body.amount;
 
+            var clientType = body.clientType;
+            
             console.log('Ether Transfer request FROM - ' + from +
                 ' , TO - ' + to);
 
@@ -339,9 +325,16 @@ app
 
                                     console
                                         .log("Transaction Object - " +
-                                            txnObj);
-
-                                    var xpriv = getCompanyAccountsRootKey();
+                                        		JSON
+                                                .stringify(txnObj));
+                                    
+                                    var xpriv;
+                                    if(clientType == "COMPANY"){
+                                    	xpriv = getCompanyAccountsRootKey();
+                                    }else if(clientType = "USER"){
+                                    	xpriv = getUserAccountsRootKey();
+                                    }
+                                    
                                     const privateKeyHex = getEthereumAddressPrivateKey(
                                         xpriv,
                                         index);
@@ -431,6 +424,8 @@ app
             var index = body.index;
             var balance = body.amount;
 
+            var clientType = body.clientType;
+            
             console.log('BITCOIN TRANSFER REQUEST FROM - ' +
                 bitcoinFromAddress + ', TO - ' + bitcoinToAddress);
 
@@ -524,7 +519,14 @@ app
                                     /* BITCOIN Private key */
                                     /** ************************************************************ */
 
-                                    var xpriv = getCompanyAccountsRootKey();
+                                    var xpriv;
+                                    if(clientType == "COMPANY"){
+                                    	xpriv = getCompanyAccountsRootKey();
+                                    }else if(clientType = "USER"){
+                                    	xpriv = getUserAccountsRootKey();
+                                    }
+                                    
+                                    
                                     const bitcoinPrivatekey = getBitcoinPrivateKey(
                                         xpriv, index);
 

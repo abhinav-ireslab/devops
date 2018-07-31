@@ -33,8 +33,6 @@ CREATE TABLE `company_account` (
   UNIQUE KEY `UNIQUE_COMPANY_CORRELATION_ID_INDEX` (`company_correlation_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-/*Data for the table `company_account` */
-
 /*Table structure for table `company_token` */
 
 DROP TABLE IF EXISTS `company_token`;
@@ -54,8 +52,6 @@ CREATE TABLE `company_token` (
   CONSTRAINT `company_id_fk` FOREIGN KEY (`company_id`) REFERENCES `company_account` (`company_account_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-/*Data for the table `company_token` */
-
 /*Table structure for table `oauth_access_token` */
 
 DROP TABLE IF EXISTS `oauth_access_token`;
@@ -71,8 +67,6 @@ CREATE TABLE `oauth_access_token` (
   PRIMARY KEY (`authentication_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Data for the table `oauth_access_token` */
-
 /*Table structure for table `unique_index` */
 
 DROP TABLE IF EXISTS `unique_index`;
@@ -83,8 +77,6 @@ CREATE TABLE `unique_index` (
   `unique_user_index` decimal(19,2) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
-/*Data for the table `unique_index` */
 
 /*Table structure for table `user_account` */
 
@@ -102,8 +94,6 @@ CREATE TABLE `user_account` (
   UNIQUE KEY `UNIQUE_CHILD_INDEX` (`child_index`),
   UNIQUE KEY `UNIQUE_USER_CORRELATION_ID_INDEX` (`user_correlation_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
-/*Data for the table `user_account` */
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
