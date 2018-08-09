@@ -39,4 +39,9 @@ public interface BlockchainTransactionService {
 	 */
 	public AddressDto derivePrivateKey(BigInteger index, ClientType clientType);
 
+	/**
+	 * @param tokenContractAddress
+	 * @return
+	 */
+	public TokenDetailsDto checkTokenDetails(String tokenContractAddress);
 }

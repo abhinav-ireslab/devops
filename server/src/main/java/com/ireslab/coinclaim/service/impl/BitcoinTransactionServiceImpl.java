@@ -5,10 +5,12 @@ import java.math.BigInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.ireslab.coinclaim.dto.AddressDto;
+import com.ireslab.coinclaim.dto.TokenDetailsDto;
 import com.ireslab.coinclaim.dto.TransactionDto;
 import com.ireslab.coinclaim.properties.NodeConfigProperties;
 import com.ireslab.coinclaim.service.BlockchainTransactionService;
@@ -25,6 +27,10 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 
 	@Autowired
 	private RestTemplate restTemplate;
+
+	@Autowired
+	@Qualifier("ethereumTransactionServiceImpl")
+	private EthereumTransactionServiceImpl ethereumTxnService;
 
 	@Autowired
 	private NodeConfigProperties nodeConfigProperties;
@@ -102,5 +108,17 @@ public class BitcoinTransactionServiceImpl implements BlockchainTransactionServi
 
 		addressDto = restTemplate.postForObject(url, addressDto, AddressDto.class);
 		return addressDto;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.ireslab.coinclaim.service.BlockchainTransactionService#checkTokenDetails(
+	 * java.lang.String)
+	 */
+	@Override
+	public TokenDetailsDto checkTokenDetails(String tokenContractAddress) {
+		return ethereumTxnService.checkTokenDetails(tokenContractAddress);
 	}
 }

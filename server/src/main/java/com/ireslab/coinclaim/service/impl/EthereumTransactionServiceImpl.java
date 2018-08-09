@@ -47,7 +47,7 @@ public class EthereumTransactionServiceImpl implements BlockchainTransactionServ
 
 		LOG.debug("Calling node server to retrieve ethereum account balance for address - " + address);
 
-		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getCheckTokenDetailsEndpoint();
+		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getEthBalanceEndpoint();
 		TransactionDto transactionDto = new TransactionDto();
 		transactionDto.setFromAddress(address);
 
@@ -96,5 +96,24 @@ public class EthereumTransactionServiceImpl implements BlockchainTransactionServ
 
 		return bitcoinTxnService.derivePrivateKey(index, clientType);
 	}
-	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.ireslab.coinclaim.service.BlockchainTransactionService#checkTokenDetails(
+	 * java.lang.String)
+	 */
+	@Override
+	public TokenDetailsDto checkTokenDetails(String tokenContractAddress) {
+
+		LOG.debug("Calling node server to check token details using Contract Adrress - " + tokenContractAddress);
+		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getCheckTokenDetailsEndpoint();
+		TokenDetailsDto tokenDetailsDto = new TokenDetailsDto();
+		tokenDetailsDto.setTokenContractAddress(tokenContractAddress);
+
+		tokenDetailsDto = restTemplate.postForObject(url, tokenDetailsDto, TokenDetailsDto.class);
+
+		return tokenDetailsDto;
+	}
 }

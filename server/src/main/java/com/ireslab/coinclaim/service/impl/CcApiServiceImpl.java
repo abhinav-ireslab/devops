@@ -322,7 +322,7 @@ public class CcApiServiceImpl implements CcApiService {
 					if (!tokenSymbol.equalsIgnoreCase(clmTokenConfig.getTokenSymbol())) {
 
 						CompanyToken companyToken = companyTokenRepo.findByTokenSymbol(tokenSymbol);
-						
+
 						if (companyToken == null) {
 							LOG.error("Invalid Token Symbol | Token '" + tokenSymbol + " 'doesn't exists");
 							throw new ApiException(HttpStatus.BAD_REQUEST,
@@ -399,17 +399,24 @@ public class CcApiServiceImpl implements CcApiService {
 
 		// Get company details based on correlation id
 		CompanyAccount companyAccount = getCompanyAccount(clientCorrelationId);
-		
-		TokenDetailsDto tokenDetailsDto = commonService.checkTokenDetails(tokenDetailsRegistrationRequest.getTokenContractAddress());
-		if(null!=tokenDetailsDto.getErrorCode() && tokenDetailsDto.getErrorCode()== ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode().longValue()){
+
+		TokenDetailsDto tokenDetailsDto = ethereumTxnService
+				.checkTokenDetails(tokenDetailsRegistrationRequest.getTokenContractAddress());
+
+		if (null != tokenDetailsDto.getErrorCode() && tokenDetailsDto
+				.getErrorCode() == ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode().longValue()) {
+
 			LOG.error("Result Code - " + tokenDetailsDto.getResultCode() + " | Description - "
 					+ tokenDetailsDto.getDescription() + " | Error Code - " + tokenDetailsDto.getErrorCode());
-			List<Error> errors = new ArrayList<>();
-			errors.add(new Error(ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode(),ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.toString()));
-			throw new ApiException(HttpStatus.BAD_REQUEST,ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode(),"Invalid token contract address.",errors);
+			throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode(),
+					"Invalid token contract address.",
+					Arrays.asList(new Error(ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode(),
+							ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.toString())));
 		}
+
 		Integer tokenDecimal = Integer.parseInt(tokenDetailsDto.getTokenDecimal());
 		String tokenContractAddress = String.valueOf(tokenDetailsDto.getContractABI());
+
 		CompanyToken companyToken = new CompanyToken();
 		companyToken.setCompanyAccount(companyAccount);
 		companyToken.setTokenName(tokenDetailsDto.getTokenName());
@@ -438,8 +445,8 @@ public class CcApiServiceImpl implements CcApiService {
 		}
 
 		tokenDetailsRegistrationResponse = new TokenDetailsRegistrationResponse(HttpStatus.OK.value(),
-				ResponseCode.SUCCESS.getCode(), "Token Details for token '"
-						+ tokenDetailsDto.getTokenSymbol() + "' successfully saved");
+				ResponseCode.SUCCESS.getCode(),
+				"Token Details for token '" + tokenDetailsDto.getTokenSymbol() + "' successfully saved");
 
 		return tokenDetailsRegistrationResponse;
 	}
@@ -898,14 +905,17 @@ public class CcApiServiceImpl implements CcApiService {
 	 */
 	private void validateTokenDetails(TokenDetailsRegistrationRequest tokenDetailsRegistrationRequest) {
 
-		/*if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
-				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
-				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals())
-				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress())
-				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractBinary())) {
-			throw new ApiException(HttpStatus.BAD_REQUEST,
-					Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(), "Invalid Token Details")));
-		}*/
+		/*
+		 * if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol()) ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol()) ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals()) ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress()
+		 * ) ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractBinary())
+		 * ) { throw new ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(new
+		 * Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(),
+		 * "Invalid Token Details"))); }
+		 */
 		if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress())) {
 			throw new ApiException(HttpStatus.BAD_REQUEST,
 					Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(), "Invalid Token Details")));
