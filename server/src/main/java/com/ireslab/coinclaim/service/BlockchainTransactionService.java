@@ -3,6 +3,7 @@ package com.ireslab.coinclaim.service;
 import java.math.BigInteger;
 
 import com.ireslab.coinclaim.dto.AddressDto;
+import com.ireslab.coinclaim.dto.TokenDetailsDto;
 import com.ireslab.coinclaim.dto.TransactionDto;
 import com.ireslab.coinclaim.utils.ClientType;
 

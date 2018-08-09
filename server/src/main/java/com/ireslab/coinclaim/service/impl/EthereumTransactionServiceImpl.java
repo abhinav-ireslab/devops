@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.ireslab.coinclaim.dto.AddressDto;
+import com.ireslab.coinclaim.dto.TokenDetailsDto;
 import com.ireslab.coinclaim.dto.TransactionDto;
 import com.ireslab.coinclaim.properties.NodeConfigProperties;
 import com.ireslab.coinclaim.service.BlockchainTransactionService;
@@ -46,7 +47,7 @@ public class EthereumTransactionServiceImpl implements BlockchainTransactionServ
 
 		LOG.debug("Calling node server to retrieve ethereum account balance for address - " + address);
 
-		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getEthBalanceEndpoint();
+		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getCheckTokenDetailsEndpoint();
 		TransactionDto transactionDto = new TransactionDto();
 		transactionDto.setFromAddress(address);
 
@@ -95,4 +96,5 @@ public class EthereumTransactionServiceImpl implements BlockchainTransactionServ
 
 		return bitcoinTxnService.derivePrivateKey(index, clientType);
 	}
+	
 }

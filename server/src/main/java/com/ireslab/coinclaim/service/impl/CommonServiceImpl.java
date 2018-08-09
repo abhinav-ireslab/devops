@@ -8,8 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import com.ireslab.coinclaim.dto.TokenDetailsDto;
 import com.ireslab.coinclaim.entity.UniqueIndex;
+import com.ireslab.coinclaim.properties.NodeConfigProperties;
 import com.ireslab.coinclaim.repository.UniqueAddressRepo;
 import com.ireslab.coinclaim.service.CommonService;
 import com.ireslab.coinclaim.utils.ClientType;
@@ -26,6 +29,12 @@ public class CommonServiceImpl implements CommonService {
 
 	@Autowired
 	private UniqueAddressRepo uniqueAddressRepo;
+	
+	@Autowired
+	private NodeConfigProperties nodeConfigProperties;
+	
+	@Autowired
+	RestTemplate restTemplate;
 
 	/*
 	 * (non-Javadoc)
@@ -67,5 +76,17 @@ public class CommonServiceImpl implements CommonService {
 		lock.unlock();
 
 		return index;
+	}
+	
+	@Override
+	public TokenDetailsDto checkTokenDetails(String tokenContractAddress) {
+		LOG.debug("Calling node server to check token details using Contract Adrress - "+tokenContractAddress);
+		String url = nodeConfigProperties.getBaseUrl() + nodeConfigProperties.getCheckTokenDetailsEndpoint();
+		TokenDetailsDto tokenDetailsDto = new TokenDetailsDto();
+		tokenDetailsDto.setTokenContractAddress(tokenContractAddress);
+
+		tokenDetailsDto = restTemplate.postForObject(url, tokenDetailsDto, TokenDetailsDto.class);
+
+		return tokenDetailsDto;
 	}
 }

@@ -20,6 +20,7 @@ public class NodeConfigProperties {
 	private String btcTransferEndpoint;
 	private String ethTransferEndpoint;
 	private String privateKeyDerivationEndpoint;
+	private String checkTokenDetailsEndpoint;
 
 	/**
 	 * @return the baseUrl
@@ -126,14 +127,20 @@ public class NodeConfigProperties {
 		this.privateKeyDerivationEndpoint = privateKeyDerivationEndpoint;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
+	public String getCheckTokenDetailsEndpoint() {
+		return checkTokenDetailsEndpoint;
+	}
+
+	public void setCheckTokenDetailsEndpoint(String checkTokenDetailsEndpoint) {
+		this.checkTokenDetailsEndpoint = checkTokenDetailsEndpoint;
+	}
+
 	@Override
 	public String toString() {
 		return "NodeConfigProperties [baseUrl=" + baseUrl + ", btcBalanceEndpoint=" + btcBalanceEndpoint
-				+ ", addressGenerationEndpoint=" + addressGenerationEndpoint + "]";
+				+ ", ethBalanceEndpoint=" + ethBalanceEndpoint + ", addressGenerationEndpoint="
+				+ addressGenerationEndpoint + ", btcTransferEndpoint=" + btcTransferEndpoint + ", ethTransferEndpoint="
+				+ ethTransferEndpoint + ", privateKeyDerivationEndpoint=" + privateKeyDerivationEndpoint
+				+ ", checkTokenDetailsEndpoint=" + checkTokenDetailsEndpoint + "]";
 	}
 }

@@ -70,9 +70,13 @@ app.post('/derive_private_key', function(req, res){
      var privateKey = getEthereumAddressPrivateKey(hdpriv,body.index);
      var ethereumAddress = getEthereumAddress(hdpriv, body.index);
      
+     var bitcoinPrivateKey = getBitcoinPrivateKey(hdpriv, body.index);
+     var bitcoinAddress = getBitcoinAddress(hdpriv, body.index);
 	 var result = {
 			 uniqueEthereumAddress: ethereumAddress,
-			 ethereumAddressPrivateKey: privateKey,
+             ethereumAddressPrivateKey: privateKey,
+             uniqueBitcoinAddress: bitcoinAddress,
+             bitcoinAddressPrivateKey: bitcoinPrivateKey,
              clientType: clientType,
              index: body.index
      }
@@ -175,6 +179,7 @@ app.post('/check_eth_balance', function(req, res) {
     var fromAddress = body.fromAddress;
     
     console.log('POST REQUEST TO CHECK ETH BALANCE FOR ADDRESS - ' + fromAddress);
+    
     web3.eth.getBalance(fromAddress, function(error, balance) {
 
     	// console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'));
@@ -690,3 +695,57 @@ app.post('/getTransactionStatus', function(req, res) {
         res.end(JSON.stringify(successRes));
     });
 });
+
+app.post('/check_token_details', async function(req,res) {
+
+    res.writeHead(200, {
+        'Content-Type': 'application/json'
+    });
+    var body = req.body;
+   // var fromAddress = body.fromAddress;
+    var contractAddress = body.tokenContractAddress; 
+    var contractABI = properties.ERC20ABI;
+    try{
+        var tokenContract = new web3.eth.Contract(contractABI,contractAddress);
+    }catch(err){
+        // contract address is invalid
+        var result = {
+            resultCode : 100,
+            description : "Invalid contract address.",
+            errorCode : 817
+        }
+        res.end(JSON.stringify(result));
+    }
+
+    try{
+        var tokenContract = new web3.eth.Contract(contractABI,contractAddress);
+       
+            var tokenDecimal = await tokenContract.methods.decimals().call();
+            //var tokenBalance = await tokenContract.methods.balanceOf(fromAddress).call();
+           // console.log("Balance ::"+tokenBalance);
+            //var adjustedBalance = tokenBalance / Math.pow(10, tokenDecimal)
+            var tokenName = await tokenContract.methods.name().call();
+            var tokenSymbol = await tokenContract.methods.symbol().call();
+            var response = {
+                tokenDecimal : tokenDecimal,
+               // balance : adjustedBalance,
+               tokenName : tokenName,
+               tokenSymbol : tokenSymbol,
+               tokenContractAddress : contractAddress,
+               contractABI : contractABI
+            }
+          res.end(JSON.stringify(response));
+        
+    }catch (e) {
+        console.log("Exception occured " +
+            e);
+            var result = {
+                errorCode : 100,
+                errorDesc : e.stack,
+                code : 100
+            }
+       
+        res.end(JSON.stringify(result));
+    }
+});
+

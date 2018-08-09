@@ -20,6 +20,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.ireslab.coinclaim.dto.AddressDto;
+import com.ireslab.coinclaim.dto.TokenDetailsDto;
 import com.ireslab.coinclaim.dto.TransactionDto;
 import com.ireslab.coinclaim.entity.CompanyAccount;
 import com.ireslab.coinclaim.entity.CompanyToken;
@@ -398,17 +399,25 @@ public class CcApiServiceImpl implements CcApiService {
 
 		// Get company details based on correlation id
 		CompanyAccount companyAccount = getCompanyAccount(clientCorrelationId);
-
-		Integer tokenDecimal = Integer.parseInt(tokenDetailsRegistrationRequest.getTokenDecimals());
-
+		
+		TokenDetailsDto tokenDetailsDto = commonService.checkTokenDetails(tokenDetailsRegistrationRequest.getTokenContractAddress());
+		if(null!=tokenDetailsDto.getErrorCode() && tokenDetailsDto.getErrorCode()== ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode().longValue()){
+			LOG.error("Result Code - " + tokenDetailsDto.getResultCode() + " | Description - "
+					+ tokenDetailsDto.getDescription() + " | Error Code - " + tokenDetailsDto.getErrorCode());
+			List<Error> errors = new ArrayList<>();
+			errors.add(new Error(ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode(),ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.toString()));
+			throw new ApiException(HttpStatus.BAD_REQUEST,ResponseCode.TOKEN_CONTRACT_ADDRESS_INVALID.getCode(),"Invalid token contract address.",errors);
+		}
+		Integer tokenDecimal = Integer.parseInt(tokenDetailsDto.getTokenDecimal());
+		String tokenContractAddress = String.valueOf(tokenDetailsDto.getContractABI());
 		CompanyToken companyToken = new CompanyToken();
 		companyToken.setCompanyAccount(companyAccount);
-		companyToken.setTokenName(tokenDetailsRegistrationRequest.getTokenName());
-		companyToken.setTokenSymbol(tokenDetailsRegistrationRequest.getTokenSymbol());
+		companyToken.setTokenName(tokenDetailsDto.getTokenName());
+		companyToken.setTokenSymbol(tokenDetailsDto.getTokenSymbol());
 		companyToken.setTokenDecimals(new BigInteger(
 				StringUtils.rightPad(BigInteger.ONE.toString(), (tokenDecimal + 1), BigInteger.ZERO.toString())));
-		companyToken.setTokenContractAddress(tokenDetailsRegistrationRequest.getTokenContractAddress());
-		companyToken.setTokenContractBinary(tokenDetailsRegistrationRequest.getTokenContractBinary());
+		companyToken.setTokenContractAddress(tokenDetailsDto.getTokenContractAddress());
+		companyToken.setTokenContractBinary(tokenContractAddress);
 
 		// Save into database
 		try {
@@ -416,11 +425,11 @@ public class CcApiServiceImpl implements CcApiService {
 			LOG.debug("Company token details persisted in database . . .");
 
 		} catch (DataIntegrityViolationException dexp) {
-			LOG.error("Token with token symbol - '" + tokenDetailsRegistrationRequest.getTokenSymbol()
+			LOG.error("Token with token symbol - '" + tokenDetailsDto.getTokenSymbol()
 					+ "' already exists for client with correlationId - " + clientCorrelationId);
 			throw new ApiException(HttpStatus.BAD_REQUEST,
 					Arrays.asList(new Error(ResponseCode.TOKEN_ALREADY_EXISTS.getCode(),
-							"Token with token symbol '" + tokenDetailsRegistrationRequest.getTokenSymbol()
+							"Token with token symbol '" + tokenDetailsDto.getTokenSymbol()
 									+ "' already exits for Client Correlation Id - " + clientCorrelationId)));
 
 		} catch (Exception exp) {
@@ -430,7 +439,7 @@ public class CcApiServiceImpl implements CcApiService {
 
 		tokenDetailsRegistrationResponse = new TokenDetailsRegistrationResponse(HttpStatus.OK.value(),
 				ResponseCode.SUCCESS.getCode(), "Token Details for token '"
-						+ tokenDetailsRegistrationRequest.getTokenSymbol() + "' successfully saved");
+						+ tokenDetailsDto.getTokenSymbol() + "' successfully saved");
 
 		return tokenDetailsRegistrationResponse;
 	}
@@ -889,11 +898,15 @@ public class CcApiServiceImpl implements CcApiService {
 	 */
 	private void validateTokenDetails(TokenDetailsRegistrationRequest tokenDetailsRegistrationRequest) {
 
-		if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
+		/*if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
 				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
 				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals())
 				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress())
 				|| StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractBinary())) {
+			throw new ApiException(HttpStatus.BAD_REQUEST,
+					Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(), "Invalid Token Details")));
+		}*/
+		if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress())) {
 			throw new ApiException(HttpStatus.BAD_REQUEST,
 					Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(), "Invalid Token Details")));
 		}
