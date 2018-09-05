@@ -6,9 +6,9 @@ package com.ireslab.coinclaim.dto;
  */
 public class NodeResponse {
 
-	private Long errorCode;
-	private String description;
-	private String resultCode;
+	protected Long errorCode;
+	protected String description;
+	protected String resultCode;
 
 	/**
 	 * @return the errorCode

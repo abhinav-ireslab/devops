@@ -648,6 +648,15 @@ public class CcApiServiceImpl implements CcApiService {
 
 				transactionDto = bitcoinTxnService.transferTokens(transactionDto);
 				LOG.debug("Response from node server - " + transactionDto.toString());
+
+				if (transactionDto.getTransactionReciept() == null) {
+					throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+							Arrays.asList(new Error(ResponseCode.TOKEN_TRANSFER_FAILED.getCode(),
+									"Error occurred while transferring bitcoins - [Error Code - "
+											+ transactionDto.getDescription() + ", Description - "
+											+ transactionDto.getDescription() + "]")));
+				}
+
 				LOG.debug("Bitcoins transferred successfully - " + transactionDto.getTransactionReciept());
 
 				successMessage = noOfTokens + " Bitcoins (BTC) successfully transferred";

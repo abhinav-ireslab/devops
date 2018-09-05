@@ -54,17 +54,17 @@ function getUserAccountsRootKey() {
 }
 
 app.post('/derive_private_key', function(req, res){
-	
-	console.log('POST REQUEST TO DERIVE PRIVATE KEY');
-	
-	var body = req.body;
-	var clientType = body.clientType;
-	
-	 var hdpriv;
+    
+    console.log('POST REQUEST TO DERIVE PRIVATE KEY');
+    
+    var body = req.body;
+    var clientType = body.clientType;
+    
+     var hdpriv;
      if(clientType == "COMPANY"){
-     	hdpriv = getCompanyAccountsRootKey();
+         hdpriv = getCompanyAccountsRootKey();
      }else if(clientType = "USER"){
-     	hdpriv = getUserAccountsRootKey();
+         hdpriv = getUserAccountsRootKey();
      }
 
      var privateKey = getEthereumAddressPrivateKey(hdpriv,body.index);
@@ -72,17 +72,17 @@ app.post('/derive_private_key', function(req, res){
      
      var bitcoinPrivateKey = getBitcoinPrivateKey(hdpriv, body.index);
      var bitcoinAddress = getBitcoinAddress(hdpriv, body.index);
-	 var result = {
-			 uniqueEthereumAddress: ethereumAddress,
+     var result = {
+             uniqueEthereumAddress: ethereumAddress,
              ethereumAddressPrivateKey: privateKey,
              uniqueBitcoinAddress: bitcoinAddress,
              bitcoinAddressPrivateKey: bitcoinPrivateKey,
              clientType: clientType,
              index: body.index
      }
-	 
-	 console.log(result);
-	 res.end(JSON.stringify(result));
+     
+     console.log(result);
+     res.end(JSON.stringify(result));
 });
 
 
@@ -105,12 +105,12 @@ app
 
             var hdpriv;
             if(clientType == "COMPANY"){
-            	console.log('GENERATING ADDRESSES FOR COMPANY');
-            	hdpriv = getCompanyAccountsRootKey();
-            	
+                console.log('GENERATING ADDRESSES FOR COMPANY');
+                hdpriv = getCompanyAccountsRootKey();
+                
             }else if(clientType == "USER"){
-            	console.log('GENERATING ADDRESSES FOR USER');
-            	hdpriv = getUserAccountsRootKey();
+                console.log('GENERATING ADDRESSES FOR USER');
+                hdpriv = getUserAccountsRootKey();
             }
             
             /** ************************************************************ */
@@ -182,8 +182,8 @@ app.post('/check_eth_balance', function(req, res) {
     
     web3.eth.getBalance(fromAddress, function(error, balance) {
 
-    	// console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'));
-    	console.log('ETH Balance - ' + balance);
+        // console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'));
+        console.log('ETH Balance - ' + balance);
 
         var result = {
             fromAddress: fromAddress,
@@ -196,21 +196,21 @@ app.post('/check_eth_balance', function(req, res) {
 
 
 app.post('/check_token_balance', function(req, res){
-	
-	var body = req.body;
-	var beneficiaryAddress = body.beneficiaryAddress;
-	var tokenAddress = body.tokenAddress;
-	
-	console.log('POST REQUEST TO CHECK TOKEN BALANCE FOR ADDRESS - ' + beneficiaryAddress);
-	console.log('Web3.sha3("balanceOf(address)") - ' + web3.utils.sha3("balanceOf(address)"));
-	
-	web3.eth.getBalance(beneficiaryAddress, function(error, balance) {
+    
+    var body = req.body;
+    var beneficiaryAddress = body.beneficiaryAddress;
+    var tokenAddress = body.tokenAddress;
+    
+    console.log('POST REQUEST TO CHECK TOKEN BALANCE FOR ADDRESS - ' + beneficiaryAddress);
+    console.log('Web3.sha3("balanceOf(address)") - ' + web3.utils.sha3("balanceOf(address)"));
+    
+    web3.eth.getBalance(beneficiaryAddress, function(error, balance) {
 
-    	console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'))
+        console.log('ETH Balance - ' + web3.utils.fromWei(balance, 'ether'))
 
         var result = {
-    		beneficiaryAddress: beneficiaryAddress,
-    		balance: balance
+            beneficiaryAddress: beneficiaryAddress,
+            balance: balance
         }
         
         res.end(JSON.stringify(result));
@@ -239,12 +239,16 @@ app.post('/check_btc_balance', function(req, res) {
         /* CALCULATION BALANCE IF TRANSACTION IS CONFIRMED ATLEAST ONE */
         /** ************************************************************ */
         for (var i = 0; i < utxos.length; i++) {
-        	
+            
             if (utxos[i]['confirmations'] == 'undefined' || utxos[i]['confirmations'] == null || utxos[i]['confirmations'] > 0) {
                 balance += unit.fromSatoshis(parseInt(utxos[i]['satoshis']))
                     .toSatoshis();
             }
         }
+
+		if(balance == 0){
+			 balance = unit.fromSatoshis(parseInt(utxos[0]['satoshis'])).toSatoshis();
+		}
 
         console.log('BTC Balance - ' + balance)
         
@@ -330,14 +334,14 @@ app
 
                                     console
                                         .log("Transaction Object - " +
-                                        		JSON
+                                                JSON
                                                 .stringify(txnObj));
                                     
                                     var xpriv;
                                     if(clientType == "COMPANY"){
-                                    	xpriv = getCompanyAccountsRootKey();
+                                        xpriv = getCompanyAccountsRootKey();
                                     }else if(clientType = "USER"){
-                                    	xpriv = getUserAccountsRootKey();
+                                        xpriv = getUserAccountsRootKey();
                                     }
                                     
                                     const privateKeyHex = getEthereumAddressPrivateKey(
@@ -427,7 +431,7 @@ app
             var bitcoinFromAddress = body.fromAddress;
             var bitcoinToAddress = body.toAddress;
             var index = body.index;
-            var balance = body.amount;
+            var txnAmount = body.amount;
 
             var clientType = body.clientType;
             
@@ -441,14 +445,15 @@ app
 
             var result = {
                 fromAddress: bitcoinFromAddress,
+                toAddress: bitcoinToAddress,
                 index: index,
-                amount: balance,
+                amount: txnAmount,
                 transactionReciept: null,
                 resultCode: null,
                 description: null,
                 errorCode: null
             }
-
+            
             insight
                 .getUnspentUtxos(
                     bitcoinFromAddress,
@@ -461,206 +466,113 @@ app
                                 bitcoinToAddress);
                             
                             if (error) {
-                                // any other error
                                 result.code = 100;
-                                result.description = "Error while calling unpend transaction";
+                                result.description = "Error while calling unspent transaction";
                                 result.errorCode = 120;
-
                                 res.end(JSON.stringify(result));
-                            } else {
-
+                                
+                            }else{
+                                /*
+								 * if no transactions have happened, there is no
+								 * balance on the address.
+								 */
                                 if (utxos.length == 0) {
-                                    // if no transactions have
-                                    // happened, there is no
-                                    // balance
-                                    // on the address.
                                     result.code = 100;
-                                    result.description = "There is no balance on the address";
+                                    result.description = "You don't have enough Satoshis to cover the miner fee.";
                                     result.errorCode = 140;
-                                    // errorBody.errorDesc =
-                                    // "You don't have enough
-                                    // utox
-                                    // Satoshis to cover the
-                                    // miner fee.";
-                                    res.end(JSON
-                                        .stringify(result));
-                                }
-
-                                var readBalance = 0;
-                                for (var i = 0; i < utxos.length; i++) {
-                                    if (utxos[i]['confirmations'] == 'undefined' || utxos[i]['confirmations'] == null || utxos[i]['confirmations'] > 0) {
-                                        readBalance += unit
-                                            .fromSatoshis(
-                                                parseInt(utxos[i]['satoshis']))
-                                            .toSatoshis();
-                                    }
-                                }
-
-                                // get balance
-                                if (balance <= 0 ||
-                                    readBalance <= 0) {
-                                    result.code = 100;
-                                    result.description = "There is no balance on the address";
-                                    result.errorCode = 150;
-
-                                    // errorBody.errorDesc =
-                                    // "You don't have enough
-                                    // balance.";
-                                    res.end(JSON
-                                        .stringify(result));
-
-                                }
-                                if (readBalance < balance) {
-                                    result.code = 100;
-                                    result.description = "Do not have sufficient balance";
-                                    result.errorCode = 160;
-
-                                    // errorBody.errorDesc = "";
-                                    res.end(JSON
-                                        .stringify(result));
-                                } else {
-
-                                    /** ************************************************************ */
-                                    /* BITCOIN Private key */
-                                    /** ************************************************************ */
-
-                                    var xpriv;
-                                    if(clientType == "COMPANY"){
-                                    	xpriv = getCompanyAccountsRootKey();
-                                    }else if(clientType = "USER"){
-                                    	xpriv = getUserAccountsRootKey();
-                                    }
+                                    res.end(JSON.stringify(result));
                                     
-                                    
-                                    const bitcoinPrivatekey = getBitcoinPrivateKey(
-                                        xpriv, index);
-
-                                    console
-                                        .log("creating transaction ");
-
-                                    // END
-
-                                    var transactionAmount = ""; // =
-                                    // unit.fromMilis(transaction.amount).toSatoshis();
-
-                                    if (balance > 0 &&
-                                        balance -
-                                        minerFee > 0) {
-                                        balance = balance -
-                                            minerFee;
-                                        transactionAmount = balance; // unit.fromMilis(balance).toSatoshis();
-                                        console
-                                            .log('transactionAmount ' +
-                                                transactionAmount)
-                                        // our transaction code
-                                        // will come here
-                                    } else {
-                                        result.code = 100;
-                                        result.description = "You don't have enough Satoshis to cover the miner fee.";
-                                        result.errorCode = 170;
-                                        // errorBody.errorDesc =
-                                        // "You don't have
-                                        // enough
-                                        // Satoshis to cover the
-                                        // miner fee.";
-                                        res
-                                            .end(JSON
-                                                .stringify(result));
-                                    }
-
-                                    let bitcore_transaction = new bitcore.Transaction()
-                                        .from(utxos)
-                                        .to(
-                                            bitcoinToAddress,
-                                            transactionAmount)
-                                        .fee(minerFee)
-                                        .change(
-                                            bitcoinFromAddress)
-                                        .sign(
-                                            bitcoinPrivatekey);
-
-                                    bitcore_transaction
-                                        .serialize();
-
-                                    console
-                                        .log("BITCORE TRANSACTION - " +
-                                            bitcore_transaction);
-
-                                    if (bitcore_transaction
-                                        .getSerializationError()) {
-                                        let error = bitcore_transaction
-                                            .getSerializationError().message;
-                                        if (error != undefined) {
-                                            switch (error) {
-                                                case 'Some inputs have not been fully signed':
-                                                    result.code = 100;
-                                                    result.description = "Wrong key";
-                                                    result.errorCode = 180;
-                                                    // result.errorDesc
-                                                    // = 'Please
-                                                    // check
-                                                    // your private
-                                                    // key';
-                                                    res
-                                                        .end(JSON
-                                                            .stringify(result));
-                                                    break;
-                                                default:
-                                                    result.code = 100;
-                                                    result.description = "Unknow error";
-                                                    result.errorCode = 190;
-                                                    res
-                                                        .end(JSON
-                                                            .stringify(result));
-                                            }
+                                }else{
+                                     // Getting balance from utxo's
+                                    var readBalance = 0;
+                                    for (var i = 0; i < utxos.length; i++) {
+                                        if (utxos[i]['confirmations'] == 'undefined' || utxos[i]['confirmations'] == null || utxos[i]['confirmations'] > 0) {
+                                            
+                                            readBalance += unit.fromSatoshis(parseInt(utxos[i]['satoshis'])).toSatoshis();
+                                            console.log("Account Balance - " + readBalance);
                                         }
                                     }
 
-                                    // broadcast the transaction
-                                    // to the blockchain
+                                    // Balance check
+                                   if (txnAmount <= 0 || readBalance <= 0) {
+                                        result.code = 100;
+                                        result.description = "There is not enough balance in the address.";
+                                        result.errorCode = 150;
+                                        res.end(JSON.stringify(result));
+                                        
+                                     // Check account balance & total cost
+                                    }else if (readBalance < (txnAmount + minerFee)){
+                                           result.code = 100;
+                                           result.description = "You don't have enough Satoshi's balance to cover the miner fee.";
+                                           result.errorCode = 160;
+                                           res.end(JSON.stringify(result));
+                                           
+                                   }else{    
+                                        console.log("Creating Bitcoin Transaction for Transaction Amount - (Satoshis) " + txnAmount);
+                                        
+                                        /** ************************************************************ */
+                                        /* BITCOIN Private key */
+                                        /** ************************************************************ */
+                                        var xpriv;
+                                        if(clientType == "COMPANY"){
+                                            xpriv = getCompanyAccountsRootKey();
+                                        }else if(clientType = "USER"){
+                                            xpriv = getUserAccountsRootKey();
+                                        }
 
-                                    insight
-                                        .broadcast(
-                                            bitcore_transaction,
-                                            function(
-                                                error,
-                                                hash) {
-                                                console
-                                                    .log('hash' +
-                                                        hash);
-                                                result.transactionReciept = hash;
-                                                if (error) {
-                                                    result.code = 100;
-                                                    result.description = "Error in sending transaction";
-                                                    result.errorCode = 110;
+                                        const bitcoinPrivatekey = getBitcoinPrivateKey(xpriv, index);
+                                        
+                                        let bitcore_transaction = new bitcore.Transaction().from(utxos).to(bitcoinToAddress,txnAmount).fee(minerFee).change(bitcoinFromAddress).sign(bitcoinPrivatekey);
+                                        bitcore_transaction.serialize();
 
-                                                } else {
-                                                    result.code = 200;
-                                                    result.description = "success";
-
+                                        console.log("BITCORE TRANSACTION - " + bitcore_transaction);
+                                        
+                                        if (bitcore_transaction.getSerializationError()) {    
+                                            let error = bitcore_transaction.getSerializationError().message;
+                                            if (error != undefined) {
+                                                switch (error) {
+                                                    case 'Some inputs have not been fully signed':
+                                                        result.code = 100;
+                                                        result.description = "Transaction cannot be signed. Please check your private key";
+                                                        result.errorCode = 180;
+                                                        res.end(JSON.stringify(result));
+                                                        break;
+                                                    default:
+                                                        result.code = 100;
+                                                        result.description = "Unknown error";
+                                                        result.errorCode = 190;
+                                                        res.end(JSON.stringify(result));
                                                 }
-                                                console
-                                                    .log("returning hash success")
-                                                res
-                                                    .end(JSON
-                                                        .stringify(result));
-                                                return;
-                                            });
+                                            }
+                                        }
 
-                                }
+                                        /*
+										 * broadcast the transaction to the
+										 * blockchain
+										 */
 
-                            }
-
-                            /*
-							 * if(errorBody.errorDesc != ''){
-							 * res.end(JSON.stringify(errorBody)); }else if
-							 * (balance <= 0){
-							 * res.end(JSON.stringify(successRes)); }
-							 */
-
+                                        insight.broadcast(bitcore_transaction,function(error,hash) {
+                                            
+                                                    console.log('Transaction Hash - ' + hash);
+                                                    result.transactionReciept = hash;
+                                                    if (error) {
+                                                        result.code = 100;
+                                                        result.description = "Error in sending transaction";
+                                                        result.errorCode = 110;
+                                                    } else {
+                                                        result.code = 200;
+                                                        result.description = "success";
+                                                    }
+                                                    console.log("returning hash success")
+                                                    res.end(JSON.stringify(result));
+                                                    return;
+                                                });
+                                   }                                
+                                }// inner else end
+                            }// outer else end
+                            
                         } catch (e) {
-                            console.log("Exception occured " +
-                                e);
+                            console.log("Exception occured " + e);
                             result.errorCode = 100;
                             result.errorDesc = e.stack;
                             result.code = 100;
@@ -668,8 +580,6 @@ app
                         }
                     });
         });
-
-
 
 app.post('/getTransactionStatus', function(req, res) {
 
@@ -721,9 +631,10 @@ app.post('/check_token_details', async function(req,res) {
         var tokenContract = new web3.eth.Contract(contractABI,contractAddress);
        
             var tokenDecimal = await tokenContract.methods.decimals().call();
-            //var tokenBalance = await tokenContract.methods.balanceOf(fromAddress).call();
+            // var tokenBalance = await
+            // tokenContract.methods.balanceOf(fromAddress).call();
            // console.log("Balance ::"+tokenBalance);
-            //var adjustedBalance = tokenBalance / Math.pow(10, tokenDecimal)
+            // var adjustedBalance = tokenBalance / Math.pow(10, tokenDecimal)
             var tokenName = await tokenContract.methods.name().call();
             var tokenSymbol = await tokenContract.methods.symbol().call();
             var response = {
@@ -748,4 +659,3 @@ app.post('/check_token_details', async function(req,res) {
         res.end(JSON.stringify(result));
     }
 });
-
