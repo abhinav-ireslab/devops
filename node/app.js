@@ -234,22 +234,27 @@ app.post('/check_btc_balance', function(req, res) {
     /** ************************************************************ */
     insight.getUnspentUtxos(fromAddress, function(error, utxos) {
         balance = unit.fromSatoshis(0).toSatoshis();
+        
+    
+        if(utxos != 'undefined'){
+            /* *********************************************************** */
+            / CALCULATION BALANCE IF TRANSACTION IS CONFIRMED ATLEAST ONE /
+            /* *********************************************************** */
+            for (var i = 0; i < utxos.length; i++) {
 
-        /** ************************************************************ */
-        /* CALCULATION BALANCE IF TRANSACTION IS CONFIRMED ATLEAST ONE */
-        /** ************************************************************ */
-        for (var i = 0; i < utxos.length; i++) {
-            
-            if (utxos[i]['confirmations'] == 'undefined' || utxos[i]['confirmations'] == null || utxos[i]['confirmations'] > 0) {
-                balance += unit.fromSatoshis(parseInt(utxos[i]['satoshis']))
-                    .toSatoshis();
+                if (utxos[i]['confirmations'] == 'undefined' || utxos[i]['confirmations'] == null || utxos[i]['confirmations'] > 0) {
+                    balance += unit.fromSatoshis(parseInt(utxos[i]['satoshis']))
+                        .toSatoshis();
+                }
             }
         }
 
-		if(balance == 0){
-			 balance = unit.fromSatoshis(parseInt(utxos[0]['satoshis'])).toSatoshis();
-		}
-
+       if(balance == 0){
+            for (var i = 0; i < utxos.length; i++) {
+                balance += unit.fromSatoshis(parseInt(utxos[i]['satoshis'])).toSatoshis();
+            }
+       }
+ 
         console.log('BTC Balance - ' + balance)
         
         var result = {
@@ -294,35 +299,26 @@ app
             /* Read transaction count and create transaction object */
             /** ************************************************************ */
 
-            web3.eth
-                .getTransactionCount(from)
-                .then(
-                    function(nonce) {
+            web3.eth.getTransactionCount(from).then(function(nonce) {
 
-                        var estimate = web3.eth
-                            .estimateGas({
-                                from: from,
-                                to: to,
-                                amount: value
-                            })
-                            .then(
-                                function(limit) {
+                        var estimate = web3.eth.estimateGas({from: from, to: to, value: value}).then(function(limit) {
 
                                     limit = limit * 1;
-
                                     limit = parseInt(limit);
-                                    var gasprice = new BigNumber(
-                                        21000000000);
+                                    
+                                    var gasprice = new BigNumber(21000000000);
 
-                                    var balance = value -
-                                        (gasprice
-                                            .times(limit));
-                                    var valueToHex = web3.utils
-                                        .toHex(balance);
-                                    var gasLimitToHex = web3.utils
-                                        .toHex(limit);
-                                    var gasPriceToHex = web3.utils
-                                        .toHex(gasprice);
+                                    web3.eth.getBalance(from, function(error, balance) {
+                                        if(balance < gasprice.times(limit)){
+                                            console.log("**************");
+                                        }
+                                    });
+                                    
+                                    // var balance = value -
+                                    // (gasprice.times(limit));
+                                    var valueToHex = web3.utils.toHex(value);
+                                    var gasLimitToHex = web3.utils.toHex(limit);
+                                    var gasPriceToHex = web3.utils.toHex(gasprice);
 
                                     var txnObj = {
                                         to: to,
@@ -332,10 +328,7 @@ app
                                         nonce: nonce
                                     };
 
-                                    console
-                                        .log("Transaction Object - " +
-                                                JSON
-                                                .stringify(txnObj));
+                                    console.log("Transaction Object - " + JSON.stringify(txnObj));
                                     
                                     var xpriv;
                                     if(clientType == "COMPANY"){
@@ -344,44 +337,28 @@ app
                                         xpriv = getUserAccountsRootKey();
                                     }
                                     
-                                    const privateKeyHex = getEthereumAddressPrivateKey(
-                                        xpriv,
-                                        index);
-                                    const privateKeyBuffer = Buffer
-                                        .from(
-                                            privateKeyHex,
-                                            'hex')
+                                    const privateKeyHex = getEthereumAddressPrivateKey(xpriv, index);
+                                    const privateKeyBuffer = Buffer.from(privateKeyHex, 'hex')
 
                                     var transactionHashString;
-                                    const tx = new EthereumTx(
-                                        txnObj);
-                                    tx
-                                        .sign(privateKeyBuffer);
-                                    const serializedTx = tx
-                                        .serialize();
+                                    const tx = new EthereumTx(txnObj);
+                                    tx.sign(privateKeyBuffer);
+                                    const serializedTx = tx.serialize();
 
-                                    web3.eth
-                                        .sendSignedTransaction(
-                                            '0x' +
-                                            serializedTx
-                                            .toString('hex'),
-                                            function(
-                                                err,
-                                                transactionHash) {
+                                    web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), function(err, transactionHash) {
+                                        
                                                 if (!err) {
-                                                    console
-                                                        .log(transactionHash); // "0x7f9fade1c0d57a7af66ab4ead7c2eb7b11a91385"
+                                                    console.log(transactionHash); // "0x7f9fade1c0d57a7af66ab4ead7c2eb7b11a91385"
                                                     transactionHashString = transactionHash;
                                                     code = 200;
                                                     description = "Success";
                                                     errorCode = null;
                                                 } else {
-                                                    console
-                                                        .log(err);
+                                                    console.log(err);
                                                     transactionHashString = "";
                                                     code = 100,
-                                                        description = "Error in sending transaction",
-                                                        errorCode = 110
+                                                    description = "Error in sending transaction",
+                                                    errorCode = 110
                                                 }
                                                 var result = {
                                                     fromAddress: from,
@@ -393,14 +370,8 @@ app
                                                     errorCode: errorCode
                                                 }
 
-                                                console
-                                                    .log('result - ' +
-                                                        JSON
-                                                        .stringify(result));
-
-                                                res
-                                                    .end(JSON
-                                                        .stringify(result));
+                                                console.log('result - ' + JSON.stringify(result));
+                                                res.end(JSON.stringify(result));
                                             });
 
                                 });
@@ -473,9 +444,9 @@ app
                                 
                             }else{
                                 /*
-								 * if no transactions have happened, there is no
-								 * balance on the address.
-								 */
+                                 * if no transactions have happened, there is no
+                                 * balance on the address.
+                                 */
                                 if (utxos.length == 0) {
                                     result.code = 100;
                                     result.description = "You don't have enough Satoshis to cover the miner fee.";
@@ -547,9 +518,9 @@ app
                                         }
 
                                         /*
-										 * broadcast the transaction to the
-										 * blockchain
-										 */
+                                         * broadcast the transaction to the
+                                         * blockchain
+                                         */
 
                                         insight.broadcast(bitcore_transaction,function(error,hash) {
                                             

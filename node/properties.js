@@ -12,8 +12,8 @@ module.exports = {
 	userAccountsMemonic : "erase mixed piano tide scene rich town age pitch hundred rule chat",
 	userAccountsPassword : "c0!ncl@!m",
 	
-	 //gethUrl : "https://api.myetherapi.com/eth/"
-	gethUrl : "http://180.151.74.42:8545/",
+	gethUrl : "https://api.myetherwallet.com/eth/",
+	//gethUrl : "http://180.151.74.42:8545/",
 	//gethUrl : "http://159.65.206.186:8545/",
 	ERC20ABI : [
         {
