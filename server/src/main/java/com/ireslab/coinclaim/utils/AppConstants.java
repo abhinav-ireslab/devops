@@ -1,6 +1,7 @@
 package com.ireslab.coinclaim.utils;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  * @author iRESlab
@@ -13,4 +14,6 @@ public interface AppConstants {
 	public BigDecimal ETH_DECIMAL_DIV = new BigDecimal("1000000000000000000");
 	
 	public String TRANSACTION_STATUS_SUCCESS = "0x1";
+	
+	public BigInteger WEI_TO_GWEI = new BigInteger("1000000000");
 }

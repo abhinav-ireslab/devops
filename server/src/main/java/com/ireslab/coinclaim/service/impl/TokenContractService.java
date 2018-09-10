@@ -42,6 +42,19 @@ public class TokenContractService extends Contract {
 			Credentials credentials) {
 		super(contractBinary, contractAddress, web3j, credentials, Contract.GAS_PRICE, Contract.GAS_LIMIT);
 	}
+	
+	/**
+	 * @param contractBinary
+	 * @param contractAddress
+	 * @param web3j
+	 * @param credentials
+	 * @param gasPrice
+	 * @param gasLimit
+	 */
+	protected TokenContractService(String contractBinary, String contractAddress, Web3j web3j,
+			Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+		super(contractBinary, contractAddress, web3j, credentials, gasPrice, gasLimit);
+	}
 
 	/**
 	 * @param web3j
@@ -57,6 +70,28 @@ public class TokenContractService extends Contract {
 			ccTokenContractService = new TokenContractService(tokenConfig.getTokenContractBinary(),
 					tokenConfig.getTokenContractAddress(), web3j,
 					Credentials.create(tokenConfig.getTokenDeployerPrivateKey()));
+		}
+
+		return ccTokenContractService;
+	}
+	
+	/**
+	 * @param web3j
+	 * @param tokenConfig
+	 * @param gasPrice
+	 * @param gasLimit
+	 * @return
+	 */
+	public static TokenContractService getContractServiceInstance(Web3j web3j, TokenConfig tokenConfig, 
+			BigInteger gasPrice, BigInteger gasLimit) {
+
+		TokenContractService ccTokenContractService;
+		String tokenContractAddress = new String(tokenConfig.getTokenContractAddress()).intern();
+
+		synchronized (tokenContractAddress) {
+			ccTokenContractService = new TokenContractService(tokenConfig.getTokenContractBinary(),
+					tokenConfig.getTokenContractAddress(), web3j,
+					Credentials.create(tokenConfig.getTokenDeployerPrivateKey()),gasPrice, gasLimit);
 		}
 
 		return ccTokenContractService;

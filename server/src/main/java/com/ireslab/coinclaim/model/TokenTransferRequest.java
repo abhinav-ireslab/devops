@@ -31,6 +31,10 @@ public class TokenTransferRequest extends BaseApiRequest {
 	private BigInteger senderAddressIndex;
 
 	private String beneficiaryAddress;
+	
+	private String gasPrice;
+	
+	private String gasLimit;
 
 	/**
 	 * @return the userCorrelationId
@@ -105,5 +109,35 @@ public class TokenTransferRequest extends BaseApiRequest {
 	 */
 	public void setBeneficiaryAddress(String beneficiaryAddress) {
 		this.beneficiaryAddress = beneficiaryAddress;
+	}
+
+	/**
+	 * @return gasPrice
+	 */
+	public String getGasPrice() {
+		return gasPrice;
+	}
+
+	/**
+	 * @param gasPrice
+	 * 			the gasPrice to set
+	 */
+	public void setGasPrice(String gasPrice) {
+		this.gasPrice = gasPrice;
+	}
+
+	/**
+	 * @return gasLimit
+	 */
+	public String getGasLimit() {
+		return gasLimit;
+	}
+
+	/**
+	 * @param gasLimit
+	 * 			the gasLimit to set
+	 */
+	public void setGasLimit(String gasLimit) {
+		this.gasLimit = gasLimit;
 	}
 }

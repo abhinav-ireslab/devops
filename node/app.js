@@ -289,6 +289,7 @@ app
             var from = body.fromAddress;
             var index = body.index;
             var value = body.amount;
+            var priceOfGas = body.gasPrice;
 
             var clientType = body.clientType;
             
@@ -305,8 +306,15 @@ app
 
                                     limit = limit * 1;
                                     limit = parseInt(limit);
+
+                                    var gasprice = "";
                                     
-                                    var gasprice = new BigNumber(21000000000);
+                                    if(priceOfGas != "" && priceOfGas != null && priceOfGas != undefined){
+                                        gasprice = new BigNumber(priceOfGas);
+                                    }else{
+                                        gasprice = new BigNumber(21000000000);
+                                    }
+                                    console.log("Gas price ::",gasprice);
 
                                     web3.eth.getBalance(from, function(error, balance) {
                                         if(balance < gasprice.times(limit)){

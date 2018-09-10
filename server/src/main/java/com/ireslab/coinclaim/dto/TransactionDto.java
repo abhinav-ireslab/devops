@@ -15,6 +15,8 @@ public class TransactionDto extends NodeResponse {
 
 	private String clientType;
 	private String transactionReciept;
+	
+	private String gasPrice;
 
 	/**
 	 * @return the fromAddress
@@ -106,15 +108,28 @@ public class TransactionDto extends NodeResponse {
 		this.transactionReciept = transactionReciept;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
+	/**
+	 * @return gasPrice
+	 */
+	public String getGasPrice() {
+		return gasPrice;
+	}
+
+	/**
+	 * @param gasPrice
+	 * 			the gasPrice to set
+	 */
+	public void setGasPrice(String gasPrice) {
+		this.gasPrice = gasPrice;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.ireslab.coinclaim.dto.NodeResponse#toString()
 	 */
 	@Override
 	public String toString() {
 		return "TransactionDto [fromAddress=" + fromAddress + ", index=" + index + ", toAddress=" + toAddress
 				+ ", amount=" + amount + ", clientType=" + clientType + ", transactionReciept=" + transactionReciept
-				+ ", errorCode=" + errorCode + ", description=" + description + ", resultCode=" + resultCode + "]";
+				+ ", gasPrice=" + gasPrice + "]";
 	}
 }
