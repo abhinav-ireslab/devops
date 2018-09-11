@@ -113,8 +113,8 @@ public class TokenContractService extends Contract {
 				+ ", tokenQuantity - " + tokenQuantity);
 
 		Function tokenAllocationFunction = new Function(TOKEN_ALLOCATION_CONTRACT_METHOD,
-				Arrays.<Type> asList(new Address(beneficiaryAddress), new Uint256(tokenQuantity)),
-				Arrays.<TypeReference<?>> asList(new TypeReference<Bool>() {
+				Arrays.<Type>asList(new Address(beneficiaryAddress), new Uint256(tokenQuantity)),
+				Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {
 				}));
 
 		TransactionReceipt transactionReceipt = null;
@@ -131,6 +131,7 @@ public class TokenContractService extends Contract {
 				throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
 						HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(
 								new Error(ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(), "Intrinsic gas too low")));
+
 			} else if (exp.getMessage().indexOf(AppConstants.EXCEEDS_BLOCK_GAS_LIMIT) != -1) {
 				throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.GAS_LIMIT_EXCEEDS.getCode(),
 						HttpStatus.INTERNAL_SERVER_ERROR.name(),
@@ -154,8 +155,8 @@ public class TokenContractService extends Contract {
 		LOG.debug("Request received for retrieving balance for beneficiaryAddress - " + beneficiaryAddress);
 
 		Function tokenAllocationFunction = new Function(BALANCE_CHECK_METHOD,
-				Arrays.<Type> asList(new Address(beneficiaryAddress)),
-				Arrays.<TypeReference<?>> asList(new TypeReference<Uint256>() {
+				Arrays.<Type>asList(new Address(beneficiaryAddress)),
+				Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {
 				}));
 
 		try {
