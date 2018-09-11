@@ -44,7 +44,9 @@ public enum ResponseCode {
 	
 	GAS_LIMIT_EXCEEDS(818),
 	
-	INTRINSIC_GAS_TOO_LOW(819);
+	INTRINSIC_GAS_TOO_LOW(819),
+	
+	INSUFFICIENT_FUNDS(820);
 
 	private Integer code;
 

@@ -51,7 +51,12 @@ public class TokenTransferResponse extends BaseApiResponse {
 		super(status, code, message, errors);
 		// TODO Auto-generated constructor stub
 	}
-
+	
+	/**
+	 * To return transaction hash
+	 */
+	private String transactionHash;
+	
 	/**
 	 * @return the accountDetails
 	 */
@@ -65,5 +70,20 @@ public class TokenTransferResponse extends BaseApiResponse {
 	 */
 	public void setAccountDetails(List<AccountDetails> accountDetails) {
 		this.accountDetails = accountDetails;
+	}
+
+	/**
+	 * @return transactionHash
+	 */
+	public String getTransactionHash() {
+		return transactionHash;
+	}
+
+	/**
+	 * @param transactionHash
+	 * 				the transactionHash to set
+	 */
+	public void setTransactionHash(String transactionHash) {
+		this.transactionHash = transactionHash;
 	}
 }

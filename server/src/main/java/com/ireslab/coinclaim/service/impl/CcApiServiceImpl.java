@@ -621,6 +621,7 @@ public class CcApiServiceImpl implements CcApiService {
 
 		String successMessage = null;
 		TokenTransferResponse tokenTransferResponse = null;
+		String transactionHash = null;
 
 		String noOfTokens = tokenTransferRequest.getNoOfTokens();
 		String senderAccountAddress = tokenTransferRequest.getSenderAddress();
@@ -658,7 +659,9 @@ public class CcApiServiceImpl implements CcApiService {
 											+ transactionDto.getDescription() + ", Description - "
 											+ transactionDto.getDescription() + "]")));
 				}
-
+				
+				transactionHash = transactionDto.getTransactionReciept();
+				
 				LOG.debug("Bitcoins transferred successfully - " + transactionDto.getTransactionReciept());
 				successMessage = noOfTokens + " Bitcoins (BTC) successfully transferred";
 
@@ -708,10 +711,21 @@ public class CcApiServiceImpl implements CcApiService {
 				if (transactionDto.getErrorCode() != null) {
 					LOG.error("Result Code - " + transactionDto.getResultCode() + " | Description - "
 							+ transactionDto.getDescription() + " | Error Code - " + transactionDto.getErrorCode());
+					
+					if(transactionDto.getErrorCode() == AppConstants.INSUFFICIENT_FUNDS.intValue()){
+						
+						
+						throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.INSUFFICIENT_FUNDS.getCode(),
+								HttpStatus.INTERNAL_SERVER_ERROR.name(),
+								Arrays.asList(new Error(ResponseCode.INSUFFICIENT_FUNDS.getCode(), "Insufficient funds to transfer")));
+						
+					}
 					throw new ApiException("Result Code - " + transactionDto.getResultCode() + " | Description - "
 							+ transactionDto.getDescription() + " | Error Code - " + transactionDto.getErrorCode());
 				}
 
+				transactionHash = transactionDto.getTransactionReciept();
+				
 				LOG.debug("Ethers transferred successfully - " + transactionDto.getTransactionReciept());
 				successMessage = noOfTokens + " Ethers (ETH) successfully transferred";
 
@@ -803,6 +817,8 @@ public class CcApiServiceImpl implements CcApiService {
 					if (!transactionReceipt.getStatus().equalsIgnoreCase(AppConstants.TRANSACTION_STATUS_SUCCESS)) {
 						throw new Exception("Transaction failed with status - " + transactionReceipt.getStatus());
 					}
+					
+					transactionHash = transactionReceipt.getTransactionHash();
 				}
 
 				successMessage = noOfTokens + " no of '" + tokenSymbol + "' tokens successfully transferred";
@@ -838,6 +854,7 @@ public class CcApiServiceImpl implements CcApiService {
 		tokenTransferResponse = new TokenTransferResponse(HttpStatus.OK.value(), ResponseCode.SUCCESS.getCode(),
 				successMessage, errors);
 		tokenTransferResponse.setAccountDetails(accountDetailsList);
+		tokenTransferResponse.setTransactionHash(transactionHash);
 
 		return tokenTransferResponse;
 	}

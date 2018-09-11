@@ -361,6 +361,12 @@ app
                                                     code = 200;
                                                     description = "Success";
                                                     errorCode = null;
+                                                } else if(err.message.indexOf("insufficient funds") != -1){
+                                                    console.log(err);
+                                                    transactionHashString = "";
+                                                    code = 100,
+                                                    description = err.message,
+                                                    errorCode = 111
                                                 } else {
                                                     console.log(err);
                                                     transactionHashString = "";

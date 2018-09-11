@@ -22,4 +22,6 @@ public interface AppConstants {
 	public String INTRINSIC_GAS_TOO_LOW = new String("intrinsic gas too low");
 	
 	public String EXCEEDS_BLOCK_GAS_LIMIT = new String("exceeds block gas limit");
+	
+	public Integer INSUFFICIENT_FUNDS = new Integer("111");
 }
