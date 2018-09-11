@@ -91,8 +91,7 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.ireslab.coinclaim.service.CcApiService#generateAddress(com.ireslab.
+	 * @see com.ireslab.coinclaim.service.CcApiService#generateAddress(com.ireslab.
 	 * coinclaim.model.GenerateAddressRequest)
 	 */
 	@Override
@@ -189,8 +188,7 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.ireslab.coinclaim.service.CcApiService#transferTokens(com.ireslab.
+	 * @see com.ireslab.coinclaim.service.CcApiService#transferTokens(com.ireslab.
 	 * coinclaim.model.TransferTokensRequest)
 	 */
 	@Override
@@ -263,9 +261,10 @@ public class CcApiServiceImpl implements CcApiService {
 				if (companyToken == null) {
 					LOG.error("Invalid Token Symbol | Token '" + tokenSymbol
 							+ " 'doesn't exists for Company with Correlation Id - " + companyCorrelationId);
-					throw new ApiException(HttpStatus.BAD_REQUEST, Arrays
-							.asList(new Error(ResponseCode.TOKEN_DOES_NOT_EXISTS.getCode(), "Token '" + tokenSymbol
-									+ " 'doesn't exists for Company with Correlation Id - " + companyCorrelationId)));
+					throw new ApiException(HttpStatus.BAD_REQUEST,
+							Arrays.asList(new Error(ResponseCode.TOKEN_DOES_NOT_EXISTS.getCode(),
+									"Token '" + tokenSymbol + " 'doesn't exists for Company with Correlation Id - "
+											+ companyCorrelationId)));
 				}
 
 				// Getting Company's or user's account Private Key
@@ -384,8 +383,7 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.ireslab.coinclaim.service.CcApiService#saveTokenDetails(com.ireslab.
+	 * @see com.ireslab.coinclaim.service.CcApiService#saveTokenDetails(com.ireslab.
 	 * coinclaim.model.TokenDetailsRegistrationRequest)
 	 */
 	@Override
@@ -457,8 +455,7 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.ireslab.coinclaim.service.CcApiService#retrieveBalance(com.ireslab.
+	 * @see com.ireslab.coinclaim.service.CcApiService#retrieveBalance(com.ireslab.
 	 * coinclaim.model.AccountBalanceRequest)
 	 */
 	@Override
@@ -635,7 +632,6 @@ public class CcApiServiceImpl implements CcApiService {
 
 		TransactionDto transactionDto = new TransactionDto();
 		transactionDto.setClientType(tokenTransferRequest.getClientType());
-
 		transactionDto.setGasPrice(tokenTransferRequest.getGasPrice());
 
 		switch (TokenType.valueOf(tokenTransferRequest.getTokenType())) {
@@ -697,18 +693,17 @@ public class CcApiServiceImpl implements CcApiService {
 
 			try {
 				validateGasPrice(tokenTransferRequest);
-				
+
 				BigInteger gasPrice = null;
-				
-				if(tokenTransferRequest.getGasPrice() != null && !tokenTransferRequest.getGasPrice().isEmpty()){
+
+				if (tokenTransferRequest.getGasPrice() != null && !tokenTransferRequest.getGasPrice().isEmpty()) {
 					gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
-					
-					// Conversion of wei to gwei
-					gasPrice = gasPrice.divide(AppConstants.WEI_TO_GWEI);
-					
+
+					// Conversion of GWEI to WEI
+					gasPrice = gasPrice.divide(AppConstants.GWEI_TO_WEI);
 					transactionDto.setGasPrice(gasPrice.toString());
 				}
-				
+
 				LOG.debug("Initiating transfer of '" + amountInWei + "' wei From : '" + senderAccountAddress
 						+ "' , To : " + receiverAccountAddress);
 				transactionDto = ethereumTxnService.transferTokens(transactionDto);
@@ -726,17 +721,10 @@ public class CcApiServiceImpl implements CcApiService {
 
 			} catch (Exception exp) {
 				LOG.error("Error occurred while transferring ethers");
-				
-				if (exp.getMessage().indexOf("intrinsic gas too low") != -1) {
 
-					Error error = new Error(ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
-							"Intrinsic gas too low");
-
-					throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
-							HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(error));
-					
+				if (exp instanceof ApiException) {
+					throw (ApiException) exp;
 				}
-				
 				throw new ApiException("Error occurred while transferring ethers", exp);
 			}
 
@@ -778,19 +766,18 @@ public class CcApiServiceImpl implements CcApiService {
 				TokenContractService tokenContractService = null;
 
 				if (tokenTransferRequest.getGasPrice() != null && tokenTransferRequest.getGasLimit() != null) {
-					
+
 					BigInteger gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
 					BigInteger gasLimit = new BigInteger(tokenTransferRequest.getGasLimit());
-					
+
 					// Conversion of wei to gwei
 					gasPrice = gasPrice.divide(new BigInteger("1000000000"));
-					
 
 					if (tokenTransferRequest.getGasPrice().isEmpty() && tokenTransferRequest.getGasLimit().isEmpty()) {
 						tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig);
 					} else if (!tokenTransferRequest.getGasPrice().isEmpty()
 							&& !tokenTransferRequest.getGasLimit().isEmpty()) {
-						
+
 						tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig,
 								gasPrice, gasLimit);
 
@@ -838,16 +825,14 @@ public class CcApiServiceImpl implements CcApiService {
 
 				if (exp.getMessage().indexOf("intrinsic gas too low") != -1) {
 
-					Error error = new Error(ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
-							"Intrinsic gas too low");
+					Error error = new Error(ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(), "Intrinsic gas too low");
 
 					throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
 							HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(error));
-					
+
 				} else if (exp.getMessage().indexOf("exceeds block gas limit") != -1) {
 
-					Error error = new Error(ResponseCode.GAS_LIMIT_EXCEEDS.getCode(),
-							"Exceeds block gas limit");
+					Error error = new Error(ResponseCode.GAS_LIMIT_EXCEEDS.getCode(), "Exceeds block gas limit");
 
 					throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.GAS_LIMIT_EXCEEDS.getCode(),
 							HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(error));
@@ -997,18 +982,14 @@ public class CcApiServiceImpl implements CcApiService {
 	private void validateTokenDetails(TokenDetailsRegistrationRequest tokenDetailsRegistrationRequest) {
 
 		/*
-		 * if
-		 * (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol()
-		 * ) ||
-		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
-		 * ||
-		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals(
-		 * )) || StringUtils.isBlank(tokenDetailsRegistrationRequest.
+		 * if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol() ) ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol()) ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals( )) ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.
 		 * getTokenContractAddress() ) ||
 		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.
-		 * getTokenContractBinary()) ) { throw new
-		 * ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(new
-		 * Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(),
+		 * getTokenContractBinary()) ) { throw new ApiException(HttpStatus.BAD_REQUEST,
+		 * Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(),
 		 * "Invalid Token Details"))); }
 		 */
 		if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress())) {
@@ -1031,7 +1012,6 @@ public class CcApiServiceImpl implements CcApiService {
 					Arrays.asList(new Error(ResponseCode.USER_DOES_NOT_EXISTS.getCode(),
 							"User doesn't exists for Correlation Id -" + userCorrelationId)));
 		}
-
 		return userAccount;
 	}
 
@@ -1069,78 +1049,37 @@ public class CcApiServiceImpl implements CcApiService {
 		}
 	}
 
-	private void validateGasLimit(TokenTransferRequest tokenTransferRequest) throws Exception{
-		
-		if(tokenTransferRequest.getGasLimit() != null && !tokenTransferRequest.getGasLimit().isEmpty()){
-			
+	/**
+	 * @param tokenTransferRequest
+	 * @throws Exception
+	 */
+	private void validateGasLimit(TokenTransferRequest tokenTransferRequest) throws Exception {
+
+		if (!StringUtils.isBlank(tokenTransferRequest.getGasLimit())) {
+
 			BigInteger gasLimit = new BigInteger(tokenTransferRequest.getGasLimit());
-			
-			if(gasLimit.intValue() < 21000)
-			throw new Exception("intrinsic gas too low");
-		}
-	}
-	
-	private void validateGasPrice(TokenTransferRequest tokenTransferRequest) throws Exception{
-		
-		if(tokenTransferRequest.getGasPrice() != null && !tokenTransferRequest.getGasPrice().isEmpty()){
-			
-			BigInteger gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
-			
-			gasPrice = gasPrice.divide(AppConstants.WEI_TO_GWEI);
-			
-			if(gasPrice.compareTo(BigInteger.ZERO) == -1 || gasPrice.compareTo(BigInteger.ZERO) == 0){
-				
+
+			if (gasLimit.intValue() < 21000)
 				throw new Exception("intrinsic gas too low");
-			}
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.ireslab.coinclaim.service.CcApiService#retrieveUserTokenBalance(com.
-	 * ireslab.coinclaim.model.AccountBalanceRequest)
+	/**
+	 * @param tokenTransferRequest
+	 * @throws Exception
 	 */
-	// @Override
-	// public AccountBalanceResponse
-	// retrieveUserTokenBalance(AccountBalanceRequest
-	// accountBalanceRequest) {
-	//
-	// AccountBalanceResponse accountBalanceResponse = null;
-	//
-	// CoinClaimTokenContractService ccTokenContractService =
-	// CoinClaimTokenContractService
-	// .getContractServiceInstance(web3j, clmTokenConfig);
-	//
-	// BigDecimal tokenBalance = null;
-	// try {
-	// tokenBalance = new BigDecimal(
-	// ccTokenContractService.retrieveBalance(accountBalanceRequest.getBeneficiaryAddress()))
-	// .divide(new BigDecimal(clmTokenConfig.getTokenDecimal()));
-	//
-	// if (tokenBalance == null) {
-	// throw new Exception("Cannot retrieve balance");
-	// }
-	//
-	// LOG.debug("Token balance for beneficiary address '" +
-	// accountBalanceRequest.getBeneficiaryAddress()
-	// + "' is - " + tokenBalance);
-	//
-	// } catch (Exception exp) {
-	// throw new ApiException("Error occurred while retrieving token balance",
-	// exp);
-	// }
-	//
-	// accountBalanceResponse = new
-	// AccountBalanceResponse(HttpStatus.OK.value(),
-	// ResponseCode.SUCCESS.getCode(),
-	// "Success");
-	// accountBalanceResponse.setAccountDetails(Arrays.asList(new
-	// AccountDetails(TokenType.ERC20.name(),
-	// accountBalanceRequest.getBeneficiaryAddress(),
-	// tokenBalance.toString())));
-	//
-	// return accountBalanceResponse;
-	// }
+	private void validateGasPrice(TokenTransferRequest tokenTransferRequest) throws Exception {
+
+		if (StringUtils.isNotBlank(tokenTransferRequest.getGasPrice())) {
+
+			BigInteger gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
+			gasPrice = gasPrice.divide(AppConstants.GWEI_TO_WEI);
+
+			if (gasPrice.compareTo(BigInteger.ZERO) == -1 || gasPrice.compareTo(BigInteger.ZERO) == 0) {
+				throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
+						HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(
+								new Error(ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(), "Intrinsic gas too low")));
+			}
+		}
+	}
 }

@@ -15,5 +15,5 @@ public interface AppConstants {
 	
 	public String TRANSACTION_STATUS_SUCCESS = "0x1";
 	
-	public BigInteger WEI_TO_GWEI = new BigInteger("1000000000");
+	public BigInteger GWEI_TO_WEI = new BigInteger("1000000000");
 }
