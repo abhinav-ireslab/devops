@@ -91,7 +91,8 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ireslab.coinclaim.service.CcApiService#generateAddress(com.ireslab.
+	 * @see
+	 * com.ireslab.coinclaim.service.CcApiService#generateAddress(com.ireslab.
 	 * coinclaim.model.GenerateAddressRequest)
 	 */
 	@Override
@@ -188,7 +189,8 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ireslab.coinclaim.service.CcApiService#transferTokens(com.ireslab.
+	 * @see
+	 * com.ireslab.coinclaim.service.CcApiService#transferTokens(com.ireslab.
 	 * coinclaim.model.TransferTokensRequest)
 	 */
 	@Override
@@ -261,10 +263,9 @@ public class CcApiServiceImpl implements CcApiService {
 				if (companyToken == null) {
 					LOG.error("Invalid Token Symbol | Token '" + tokenSymbol
 							+ " 'doesn't exists for Company with Correlation Id - " + companyCorrelationId);
-					throw new ApiException(HttpStatus.BAD_REQUEST,
-							Arrays.asList(new Error(ResponseCode.TOKEN_DOES_NOT_EXISTS.getCode(),
-									"Token '" + tokenSymbol + " 'doesn't exists for Company with Correlation Id - "
-											+ companyCorrelationId)));
+					throw new ApiException(HttpStatus.BAD_REQUEST, Arrays
+							.asList(new Error(ResponseCode.TOKEN_DOES_NOT_EXISTS.getCode(), "Token '" + tokenSymbol
+									+ " 'doesn't exists for Company with Correlation Id - " + companyCorrelationId)));
 				}
 
 				// Getting Company's or user's account Private Key
@@ -383,7 +384,8 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ireslab.coinclaim.service.CcApiService#saveTokenDetails(com.ireslab.
+	 * @see
+	 * com.ireslab.coinclaim.service.CcApiService#saveTokenDetails(com.ireslab.
 	 * coinclaim.model.TokenDetailsRegistrationRequest)
 	 */
 	@Override
@@ -455,7 +457,8 @@ public class CcApiServiceImpl implements CcApiService {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ireslab.coinclaim.service.CcApiService#retrieveBalance(com.ireslab.
+	 * @see
+	 * com.ireslab.coinclaim.service.CcApiService#retrieveBalance(com.ireslab.
 	 * coinclaim.model.AccountBalanceRequest)
 	 */
 	@Override
@@ -696,11 +699,11 @@ public class CcApiServiceImpl implements CcApiService {
 
 				BigInteger gasPrice = null;
 
-				if (tokenTransferRequest.getGasPrice() != null && !tokenTransferRequest.getGasPrice().isEmpty()) {
+				if (StringUtils.isNotBlank(tokenTransferRequest.getGasPrice())) {
 					gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
 
 					// Conversion of GWEI to WEI
-					gasPrice = gasPrice.divide(AppConstants.GWEI_TO_WEI);
+					gasPrice = gasPrice.multiply(AppConstants.GWEI_TO_WEI);
 					transactionDto.setGasPrice(gasPrice.toString());
 				}
 
@@ -765,36 +768,43 @@ public class CcApiServiceImpl implements CcApiService {
 				validateGasPrice(tokenTransferRequest);
 				TokenContractService tokenContractService = null;
 
-				if (tokenTransferRequest.getGasPrice() != null && tokenTransferRequest.getGasLimit() != null) {
+				BigInteger gasPrice = null;
+				BigInteger gasLimit = null;
 
-					BigInteger gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
-					BigInteger gasLimit = new BigInteger(tokenTransferRequest.getGasLimit());
-
-					// Conversion of wei to gwei
-					gasPrice = gasPrice.divide(new BigInteger("1000000000"));
-
-					if (tokenTransferRequest.getGasPrice().isEmpty() && tokenTransferRequest.getGasLimit().isEmpty()) {
-						tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig);
-					} else if (!tokenTransferRequest.getGasPrice().isEmpty()
-							&& !tokenTransferRequest.getGasLimit().isEmpty()) {
-
-						tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig,
-								gasPrice, gasLimit);
-
-					} else if (tokenTransferRequest.getGasPrice().isEmpty()
-							&& !tokenTransferRequest.getGasLimit().isEmpty()) {
-
-						tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig,
-								Contract.GAS_PRICE, gasLimit);
-
-					} else if (!tokenTransferRequest.getGasPrice().isEmpty()
-							&& tokenTransferRequest.getGasLimit().isEmpty()) {
-
-						tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig,
-								gasPrice, Contract.GAS_LIMIT);
-					}
-				} else {
+				if (StringUtils.isBlank(tokenTransferRequest.getGasPrice())
+						&& StringUtils.isBlank(tokenTransferRequest.getGasLimit())) {
 					tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig);
+					
+				} else if (StringUtils.isNotBlank(tokenTransferRequest.getGasPrice())
+						&& StringUtils.isNotBlank(tokenTransferRequest.getGasLimit())) {
+
+					gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
+					gasLimit = new BigInteger(tokenTransferRequest.getGasLimit());
+
+					// Conversion of GWEI to WEI
+					gasPrice = gasPrice.multiply(AppConstants.GWEI_TO_WEI);
+
+					tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig, gasPrice,
+							gasLimit);
+
+				} else if (StringUtils.isBlank(tokenTransferRequest.getGasPrice())
+						&& StringUtils.isNotBlank(tokenTransferRequest.getGasLimit())) {
+
+					gasLimit = new BigInteger(tokenTransferRequest.getGasLimit());
+
+					tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig,
+							Contract.GAS_PRICE, gasLimit);
+
+				} else if (StringUtils.isNotBlank(tokenTransferRequest.getGasPrice())
+						&& StringUtils.isBlank(tokenTransferRequest.getGasLimit())) {
+
+					gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
+
+					// Conversion of GWEI to WEI
+					gasPrice = gasPrice.multiply(AppConstants.GWEI_TO_WEI);
+
+					tokenContractService = TokenContractService.getContractServiceInstance(web3j, tokenConfig, gasPrice,
+							Contract.GAS_LIMIT);
 				}
 
 				TransactionReceipt transactionReceipt = tokenContractService.allocateTokens(receiverAccountAddress,
@@ -823,19 +833,8 @@ public class CcApiServiceImpl implements CcApiService {
 			} catch (Exception exp) {
 				LOG.error("Error occurred while transferring ERC-20 tokens - " + ExceptionUtils.getStackTrace(exp));
 
-				if (exp.getMessage().indexOf("intrinsic gas too low") != -1) {
-
-					Error error = new Error(ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(), "Intrinsic gas too low");
-
-					throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
-							HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(error));
-
-				} else if (exp.getMessage().indexOf("exceeds block gas limit") != -1) {
-
-					Error error = new Error(ResponseCode.GAS_LIMIT_EXCEEDS.getCode(), "Exceeds block gas limit");
-
-					throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.GAS_LIMIT_EXCEEDS.getCode(),
-							HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(error));
+				if (exp instanceof ApiException) {
+					throw (ApiException) exp;
 				}
 
 				throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -982,14 +981,18 @@ public class CcApiServiceImpl implements CcApiService {
 	private void validateTokenDetails(TokenDetailsRegistrationRequest tokenDetailsRegistrationRequest) {
 
 		/*
-		 * if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol() ) ||
-		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol()) ||
-		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals( )) ||
-		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.
+		 * if
+		 * (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol()
+		 * ) ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenSymbol())
+		 * ||
+		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenDecimals(
+		 * )) || StringUtils.isBlank(tokenDetailsRegistrationRequest.
 		 * getTokenContractAddress() ) ||
 		 * StringUtils.isBlank(tokenDetailsRegistrationRequest.
-		 * getTokenContractBinary()) ) { throw new ApiException(HttpStatus.BAD_REQUEST,
-		 * Arrays.asList(new Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(),
+		 * getTokenContractBinary()) ) { throw new
+		 * ApiException(HttpStatus.BAD_REQUEST, Arrays.asList(new
+		 * Error(ResponseCode.INVALID_TOKEN_DETAILS.getCode(),
 		 * "Invalid Token Details"))); }
 		 */
 		if (StringUtils.isBlank(tokenDetailsRegistrationRequest.getTokenContractAddress())) {
@@ -1055,12 +1058,14 @@ public class CcApiServiceImpl implements CcApiService {
 	 */
 	private void validateGasLimit(TokenTransferRequest tokenTransferRequest) throws Exception {
 
-		if (!StringUtils.isBlank(tokenTransferRequest.getGasLimit())) {
+		if (StringUtils.isNotBlank(tokenTransferRequest.getGasLimit())) {
 
 			BigInteger gasLimit = new BigInteger(tokenTransferRequest.getGasLimit());
 
-			if (gasLimit.intValue() < 21000)
-				throw new Exception("intrinsic gas too low");
+			if (gasLimit.compareTo(AppConstants.GAS_LIMIT) == -1)
+				throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
+						HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(
+								new Error(ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(), "Intrinsic gas too low")));
 		}
 	}
 
@@ -1073,7 +1078,7 @@ public class CcApiServiceImpl implements CcApiService {
 		if (StringUtils.isNotBlank(tokenTransferRequest.getGasPrice())) {
 
 			BigInteger gasPrice = new BigInteger(tokenTransferRequest.getGasPrice());
-			gasPrice = gasPrice.divide(AppConstants.GWEI_TO_WEI);
+			gasPrice = gasPrice.multiply(AppConstants.GWEI_TO_WEI);
 
 			if (gasPrice.compareTo(BigInteger.ZERO) == -1 || gasPrice.compareTo(BigInteger.ZERO) == 0) {
 				throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),

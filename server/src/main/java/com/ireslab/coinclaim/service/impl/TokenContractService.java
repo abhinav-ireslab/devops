@@ -6,6 +6,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Bool;
@@ -17,6 +18,10 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 
+import com.ireslab.coinclaim.exception.ApiException;
+import com.ireslab.coinclaim.model.Error;
+import com.ireslab.coinclaim.utils.AppConstants;
+import com.ireslab.coinclaim.utils.ResponseCode;
 import com.ireslab.coinclaim.utils.TokenConfig;
 
 /**
@@ -42,7 +47,7 @@ public class TokenContractService extends Contract {
 			Credentials credentials) {
 		super(contractBinary, contractAddress, web3j, credentials, Contract.GAS_PRICE, Contract.GAS_LIMIT);
 	}
-	
+
 	/**
 	 * @param contractBinary
 	 * @param contractAddress
@@ -51,8 +56,8 @@ public class TokenContractService extends Contract {
 	 * @param gasPrice
 	 * @param gasLimit
 	 */
-	protected TokenContractService(String contractBinary, String contractAddress, Web3j web3j,
-			Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+	protected TokenContractService(String contractBinary, String contractAddress, Web3j web3j, Credentials credentials,
+			BigInteger gasPrice, BigInteger gasLimit) {
 		super(contractBinary, contractAddress, web3j, credentials, gasPrice, gasLimit);
 	}
 
@@ -74,7 +79,7 @@ public class TokenContractService extends Contract {
 
 		return ccTokenContractService;
 	}
-	
+
 	/**
 	 * @param web3j
 	 * @param tokenConfig
@@ -82,7 +87,7 @@ public class TokenContractService extends Contract {
 	 * @param gasLimit
 	 * @return
 	 */
-	public static TokenContractService getContractServiceInstance(Web3j web3j, TokenConfig tokenConfig, 
+	public static TokenContractService getContractServiceInstance(Web3j web3j, TokenConfig tokenConfig,
 			BigInteger gasPrice, BigInteger gasLimit) {
 
 		TokenContractService ccTokenContractService;
@@ -91,7 +96,7 @@ public class TokenContractService extends Contract {
 		synchronized (tokenContractAddress) {
 			ccTokenContractService = new TokenContractService(tokenConfig.getTokenContractBinary(),
 					tokenConfig.getTokenContractAddress(), web3j,
-					Credentials.create(tokenConfig.getTokenDeployerPrivateKey()),gasPrice, gasLimit);
+					Credentials.create(tokenConfig.getTokenDeployerPrivateKey()), gasPrice, gasLimit);
 		}
 
 		return ccTokenContractService;
@@ -108,8 +113,8 @@ public class TokenContractService extends Contract {
 				+ ", tokenQuantity - " + tokenQuantity);
 
 		Function tokenAllocationFunction = new Function(TOKEN_ALLOCATION_CONTRACT_METHOD,
-				Arrays.<Type>asList(new Address(beneficiaryAddress), new Uint256(tokenQuantity)),
-				Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {
+				Arrays.<Type> asList(new Address(beneficiaryAddress), new Uint256(tokenQuantity)),
+				Arrays.<TypeReference<?>> asList(new TypeReference<Bool>() {
 				}));
 
 		TransactionReceipt transactionReceipt = null;
@@ -121,6 +126,17 @@ public class TokenContractService extends Contract {
 		} catch (Exception exp) {
 			LOG.error("Error occurred while executing token allocation transaction - "
 					+ ExceptionUtils.getStackTrace(exp));
+
+			if (exp.getMessage().indexOf(AppConstants.INTRINSIC_GAS_TOO_LOW) != -1) {
+				throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(),
+						HttpStatus.INTERNAL_SERVER_ERROR.name(), Arrays.asList(
+								new Error(ResponseCode.INTRINSIC_GAS_TOO_LOW.getCode(), "Intrinsic gas too low")));
+			} else if (exp.getMessage().indexOf(AppConstants.EXCEEDS_BLOCK_GAS_LIMIT) != -1) {
+				throw new ApiException(HttpStatus.BAD_REQUEST, ResponseCode.GAS_LIMIT_EXCEEDS.getCode(),
+						HttpStatus.INTERNAL_SERVER_ERROR.name(),
+						Arrays.asList(new Error(ResponseCode.GAS_LIMIT_EXCEEDS.getCode(), "Exceeds block gas limit")));
+			}
+
 			throw new Exception(exp);
 		}
 
@@ -138,8 +154,8 @@ public class TokenContractService extends Contract {
 		LOG.debug("Request received for retrieving balance for beneficiaryAddress - " + beneficiaryAddress);
 
 		Function tokenAllocationFunction = new Function(BALANCE_CHECK_METHOD,
-				Arrays.<Type>asList(new Address(beneficiaryAddress)),
-				Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {
+				Arrays.<Type> asList(new Address(beneficiaryAddress)),
+				Arrays.<TypeReference<?>> asList(new TypeReference<Uint256>() {
 				}));
 
 		try {

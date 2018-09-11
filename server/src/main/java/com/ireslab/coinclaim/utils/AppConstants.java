@@ -16,4 +16,10 @@ public interface AppConstants {
 	public String TRANSACTION_STATUS_SUCCESS = "0x1";
 	
 	public BigInteger GWEI_TO_WEI = new BigInteger("1000000000");
+	
+	public BigInteger GAS_LIMIT = new BigInteger("21000");
+	
+	public String INTRINSIC_GAS_TOO_LOW = new String("intrinsic gas too low");
+	
+	public String EXCEEDS_BLOCK_GAS_LIMIT = new String("exceeds block gas limit");
 }
