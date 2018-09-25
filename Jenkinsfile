@@ -9,8 +9,7 @@ pipeline {
       }
       steps {
 		echo 'Making build.'
-		open cmd
-       run cmd 'mvn clean install'
+		sh 'mvn clean install'
       }
     } 
   }
