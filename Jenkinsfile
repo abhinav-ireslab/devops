@@ -9,7 +9,10 @@ pipeline {
       }
       steps {
 		echo 'Making build.'
-        sh 'mvn clean install'
+		set /p cmd=Command:
+		%cmd%
+		goto execute
+        cmd 'mvn clean install'
       }
     } 
   }
