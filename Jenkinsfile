@@ -15,7 +15,7 @@ pipeline {
   stage('Docker Build') {
       agent any
       steps {
-        sh 'docker build -t java/coinclaim:latest .'
+        sh 'docker build -t coinclaim:latest .'
       }
     }
   }
