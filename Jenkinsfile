@@ -18,10 +18,5 @@ pipeline {
         sh 'docker build -t coinclaim:latest .'
       }
     }
-	   stage('Docker Push'){
-		  docker.withRegistry('https://registry.hub.docker.com', 'docker030303@'){
-		  	app.push('coinclaim:latest')
-		  }
-	  }
   }
 }
