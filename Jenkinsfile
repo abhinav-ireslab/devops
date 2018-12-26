@@ -18,15 +18,5 @@ pipeline {
         sh 'docker build -t coinclaim:latest .'
       }
     }
-	  
-	  stage('Docker push') {
-       agent any
-       steps {
-       sh docker.withRegistry('https://registry.hub.docker.com', 'docker030303'){
-       def customIMage =docker.build('coinclaim:latest')
-       customIMage.push()
-       }
-      }
-    }
   }
 }
